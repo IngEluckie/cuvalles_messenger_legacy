@@ -12,6 +12,7 @@ export class ConfGroup {
     if (!this.container) throw new Error(`No se encontró el contenedor: ${containerSelector}`);
 
     this.gm = opts.gm;  // referencia opcional a GroupManager
+    this.chatManager = opts.chatManager || null;
 
     /* Estado inicial */
     this.state = {
@@ -27,12 +28,14 @@ export class ConfGroup {
   hide() { this.container.style.display = "none"; }
   show() { this.container.style.display = "flex"; }
   regresarAlLogin() { window.location.href = browser_url + "/login.html"; }
+  attachChatManager(manager) { this.chatManager = manager; }
 
   /* ───────── setter que refresca la UI ───────── */
   setState(partial) {
     Object.assign(this.state, partial);
     this.render();
     this.bindEvents();
+    this.populateMemberAvatars();
   }
 
   /* ───────── carga de datos ───────── */
@@ -64,37 +67,55 @@ export class ConfGroup {
 
     this.container.innerHTML = /*html*/`
       <button class="close-btn">×</button>
-
-      <!-- Encabezado -->
-      <div class="conf-header">
-        <div class="conf-header-col">
-          <div class="conf-name-row">
-            <h2>${nombre}</h2>
+      <div class="info-content-scroll">
+        <!-- Encabezado -->
+        <div class="conf-header">
+          <div class="conf-header-col">
+            <div class="conf-name-row">
+              <h2>${nombre}</h2>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Descripción -->
-      <div class="section-header">
-        <h3>Descripción</h3>
-      </div>
-      <textarea id="conf-desc" class="desc-area" readonly>${descripcion}</textarea>
+        <!-- Descripción -->
+        <div class="section-header">
+          <h3>Descripción</h3>
+        </div>
+        <textarea id="conf-desc" class="desc-area" readonly>${descripcion}</textarea>
 
-      <!-- Integrantes -->
-      <div class="section-header" style="margin-top:24px;">
-        <h3>Integrantes</h3>
-      </div>
-      <ul class="member-list">
-        ${members.map(m => `
-          <li class="member-item" data-id="${m.user_id}">
-            <!--img src="${m.foto_perfil}" class="member-avatar"-->
-            <span class="member-name">${m.username}${m.role === 'admin' ? ' (admin)' : ''}</span>
-          </li>`).join("")}
-      </ul>
+        <!-- Integrantes -->
+        <div class="section-header" style="margin-top:24px;">
+          <h3>Integrantes</h3>
+        </div>
+        <ul class="member-list">
+          ${members.map(member => {
+            const avatar = member.foto_perfil || "/images/app/default_user.png";
+            const statusLine = member.status || member.descripcion || "";
+            const isAdmin = member.role === "admin";
+            return `
+              <li class="member-item" data-id="${member.user_id}">
+                <div class="member-left">
+                  <img src="${avatar}" alt="${member.username}" class="member-avatar" data-username="${member.username}" />
+                  <div class="member-text">
+                    <span class="member-name">${member.username}</span>
+                    ${statusLine ? `<span class="member-status">${statusLine}</span>` : ""}
+                  </div>
+                </div>
+                <div class="member-right">
+                  ${isAdmin ? `<span class="member-admin">Admin</span>` : ""}
+                  <button class="member-chat-btn" data-user-id="${member.user_id}" aria-label="Abrir chat con ${member.username}">
+                    <span class="member-chat-icon">&gt;</span>
+                  </button>
+                </div>
+              </li>
+            `;
+          }).join("")}
+        </ul>
 
-      <div class="conf-footer">
-        ${isAdmin ? '<button id="btn-configurar" class="icon-btn" title="Configurar grupo">⚙️</button>' : ''}
-        <button class="btn-leave">Salir ❌</button>
+        <div class="conf-footer">
+          ${isAdmin ? '<button id="btn-configurar" class="icon-btn" title="Configurar grupo">⚙️</button>' : ''}
+          <button class="btn-leave">Salir ❌</button>
+        </div>
       </div>
     `;
   }
@@ -116,6 +137,46 @@ export class ConfGroup {
 
     // Salir del grupo
     this.container.querySelector(".btn-leave")?.addEventListener("click", () => this.leaveGroup());
+
+    // Abrir chat individual
+    this.container.querySelectorAll(".member-chat-btn").forEach(btn => {
+      btn.addEventListener("click", (event) => {
+        const { userId } = event.currentTarget.dataset;
+        if (!userId) return;
+        if (this.chatManager && typeof this.chatManager.openChat === "function") {
+          this.chatManager.openChat(userId);
+          this.hide();
+        } else {
+          console.warn("ChatManager no configurado, no se puede abrir el chat individual.");
+        }
+      });
+    });
+  }
+
+  populateMemberAvatars() {
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) return;
+    this.container.querySelectorAll(".member-avatar[data-username]").forEach(img => {
+      const username = img.dataset.username;
+      if (!username) return;
+      fetch(`${browser_url}/media/images/${username}.webp`, {
+        headers: {
+          Authorization: `Bearer ${jwt}`
+        }
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(res.statusText);
+          return res.blob();
+        })
+        .then(blob => {
+          const objectUrl = URL.createObjectURL(blob);
+          img.src = objectUrl;
+        })
+        .catch(err => {
+          console.warn(`No se pudo cargar la imagen de ${username}:`, err);
+          img.src = "/images/app/default_user.png";
+        });
+    });
   }
 
   /* ───────── salir del grupo ───────── */

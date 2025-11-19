@@ -46,12 +46,14 @@ export class InfoUsers {
       // Insertamos el HTML formateado en el contenedor
       this.container.innerHTML = `
         <button class="close-btn" id="close-btn">x</button>
-        <img src="images/app/default_user.png" class="avatar" id="avatar">
-        <h2 class="name">${otherUser}</h2>
-        <p class="role">Estado:</p>
-        <p class="description">
-          ${statusUser ? statusUser : "Información adicional del usuario. Puedes agregar más detalles aquí si lo deseas."}
-        </p>
+        <div class="info-content-scroll">
+          <img src="images/app/default_user.png" class="avatar" id="avatar">
+          <h2 class="name">${otherUser}</h2>
+          <p class="role">Estado:</p>
+          <p class="description">
+            ${statusUser ? statusUser : "Información adicional del usuario. Puedes agregar más detalles aquí si lo deseas."}
+          </p>
+        </div>
       `;
 
       // Asignamos el listener para el botón de cerrado
