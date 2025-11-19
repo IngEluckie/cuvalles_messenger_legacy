@@ -172,12 +172,14 @@ export class GroupManager {
     this.resultsBox.style.display = searchResults.length ? 'block' : 'none';
 
     // Seleccionados
-    this.listSelect.innerHTML = miembros.map(u => `<div class="search-result-item fila-usuario" data-user-id="${u}"><span>${u}</span><button class="btn-eliminar">✕</button></div>`).join('');
+    this.listSelect.innerHTML = miembros.map(u => GroupManager.selectedMemberTemplate(u)).join('');
     this.listSelect.style.display = miembros.length ? 'block' : 'none';
 
     if (this.avatarPreview) {
       this.avatarPreview.src = this.state.avatarPreviewUrl || '/images/app/grupo_default_image.png';
     }
+
+    this.populateSelectedAvatars();
   }
 
   /* ========= Eventos ========= */
@@ -204,8 +206,14 @@ export class GroupManager {
 
     // Quitar usuario
     this.listSelect.addEventListener('click', e => {
-      if (!e.target.classList.contains('btn-eliminar')) return;
-      const usr = e.target.closest('[data-user-id]').dataset.userId;
+      if (!e.target.classList.contains('seleccionado-remove')) return;
+      const card = e.target.closest('[data-user-id]');
+      if (!card) return;
+      const usr = card.dataset.userId;
+      const img = card.querySelector('.seleccionado-avatar');
+      if (img?.dataset.objectUrl) {
+        URL.revokeObjectURL(img.dataset.objectUrl);
+      }
       this.setState({ miembros: this.state.miembros.filter(u => u !== usr) });
     });
 
@@ -250,6 +258,52 @@ export class GroupManager {
   /* ========= Debounce ========= */
   static debounce(fn, delay) {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+  }
+
+  static selectedMemberTemplate(username) {
+    return `
+      <div class="seleccionado-card" data-user-id="${username}">
+        <div class="seleccionado-info">
+          <img src="/images/app/default_user.png" alt="${username}" class="seleccionado-avatar" data-username="${username}">
+          <span class="seleccionado-name">${username}</span>
+        </div>
+        <div class="seleccionado-actions">
+          <span class="seleccionado-arrow">&gt;</span>
+          <button class="seleccionado-remove" aria-label="Quitar ${username}">✕</button>
+        </div>
+      </div>
+    `;
+  }
+
+  populateSelectedAvatars() {
+    const jwt = localStorage.getItem('jwt');
+    if (!jwt) return;
+
+    Array.from(this.listSelect.querySelectorAll('.seleccionado-avatar[data-username]')).forEach(img => {
+      const username = img.dataset.username;
+      if (!username) return;
+
+      if (img.dataset.objectUrl) {
+        URL.revokeObjectURL(img.dataset.objectUrl);
+        delete img.dataset.objectUrl;
+      }
+
+      fetch(`${browser_url}/media/images/${encodeURIComponent(username)}.webp`, {
+        headers: { Authorization: `Bearer ${jwt}` }
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(res.statusText);
+          return res.blob();
+        })
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          img.src = url;
+           img.dataset.objectUrl = url;
+        })
+        .catch(() => {
+          img.src = '/images/app/default_user.png';
+        });
+    });
   }
 
   handleAvatarSelection(event) {
