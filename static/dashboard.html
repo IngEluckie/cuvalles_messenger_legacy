@@ -106,6 +106,24 @@
         <!-- Cierre -->
         <span class="close" id="closeCrearGrupo">&times;</span>
 
+        <!-- Avatar del grupo -->
+        <div class="group-avatar-row">
+          <img
+            id="groupAvatarPreview"
+            class="group-avatar-img"
+            src="images/app/grupo_default_image.png"
+            alt="Imagen del grupo"
+          />
+          <div class="group-avatar-info">
+            <h2 class="group-avatar-title">Imagen del grupo</h2>
+            <button type="button" class="btn-outline" id="btnCambiarFotoGrupo">
+              Cambiar imagen del grupo
+            </button>
+            <p class="group-avatar-hint">Formato recomendado: cuadrado, se muestra en 200 × 200 px.</p>
+          </div>
+          <input type="file" id="inputFotoGrupo" accept="image/*" hidden />
+        </div>
+
         <!-- Nombre del grupo -->
         <div class="form-row">
           <label for="nombreGrupo" class="form-label">Nombre del grupo:</label>

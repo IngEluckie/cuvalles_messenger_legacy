@@ -740,6 +740,57 @@ button:disabled {
   max-width: 900px;
 }
 
+.group-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.group-avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.group-avatar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-avatar-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary-color);
+}
+
+.group-avatar-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary-color);
+}
+
+.btn-outline {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-outline:hover {
+  background: var(--hover-color);
+  border-color: var(--text-secondary-color);
+}
+
 /* Fila “Nombre del grupo:” */
 .form-row {
   display: flex;

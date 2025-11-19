@@ -18,6 +18,9 @@ export class GroupManager {
     this.resultsBox   = this.container.querySelector('#usuariosOpciones');
     this.listSelect   = this.container.querySelector('#usuariosSeleccionados');
     this.btnSubmit    = this.container.querySelector('#btn-iniciar-creacion');
+    this.avatarPreview   = this.container.querySelector('#groupAvatarPreview');
+    this.btnChangeAvatar = this.container.querySelector('#btnCambiarFotoGrupo');
+    this.inputAvatarFile = this.container.querySelector('#inputFotoGrupo');
 
     /* Span de error tras el nombre */
     this.errorNombre = document.createElement('span');
@@ -34,8 +37,12 @@ export class GroupManager {
       descripcion: '',
       miembros: [],          // array de usernames
       searchResults: [],
-      errores: {}
+      errores: {},
+      avatarPreviewUrl: '/images/app/grupo_default_image.png',
+      avatarFile: null
     };
+
+    this._avatarObjectUrl = null;
 
     this.bindEvents();
     this.render();
@@ -53,12 +60,16 @@ export class GroupManager {
 
   /* ========= Flujos públicos ========= */
   crearGrupo() {
+    this._clearAvatarObjectUrl();
     this.setState({
       modo: 'crear', chatId: null,
       nombre: '', descripcion: '', miembros: [],
-      searchResults: [], errores: {}
+      searchResults: [], errores: {},
+      avatarPreviewUrl: '/images/app/grupo_default_image.png',
+      avatarFile: null
     });
     this.show();
+    if (this.inputAvatarFile) this.inputAvatarFile.value = '';
   }
 
   async modificarGrupo(chatId) {
@@ -66,8 +77,16 @@ export class GroupManager {
     try {
       const data = await this.fetchGroupInfo(chatId);
       const miembros = (data.members || []).map(m => m.username);
-      this.setState({ nombre: data.nombre, descripcion: data.descripcion || '', miembros });
+      if (!data.avatar_url) this._clearAvatarObjectUrl();
+      this.setState({
+        nombre: data.nombre,
+        descripcion: data.descripcion || '',
+        miembros,
+        avatarPreviewUrl: data.avatar_url || '/images/app/grupo_default_image.png',
+        avatarFile: null
+      });
       this.show();
+      if (this.inputAvatarFile) this.inputAvatarFile.value = '';
     } catch (err) {
       console.error(err);
       alert('No se pudo cargar la información del grupo.');
@@ -155,6 +174,10 @@ export class GroupManager {
     // Seleccionados
     this.listSelect.innerHTML = miembros.map(u => `<div class="search-result-item fila-usuario" data-user-id="${u}"><span>${u}</span><button class="btn-eliminar">✕</button></div>`).join('');
     this.listSelect.style.display = miembros.length ? 'block' : 'none';
+
+    if (this.avatarPreview) {
+      this.avatarPreview.src = this.state.avatarPreviewUrl || '/images/app/grupo_default_image.png';
+    }
   }
 
   /* ========= Eventos ========= */
@@ -199,6 +222,14 @@ export class GroupManager {
         alert(`No se pudo ${this.state.modo === 'crear' ? 'crear' : 'actualizar'} el grupo: ${err.message}`);
       }
     });
+
+    // Avatar: abrir selector
+    this.btnChangeAvatar?.addEventListener('click', () => {
+      this.inputAvatarFile?.click();
+    });
+
+    // Avatar: previsualizar archivo
+    this.inputAvatarFile?.addEventListener('change', e => this.handleAvatarSelection(e));
   }
 
   /* ========= Búsqueda remota ========= */
@@ -219,5 +250,31 @@ export class GroupManager {
   /* ========= Debounce ========= */
   static debounce(fn, delay) {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+  }
+
+  handleAvatarSelection(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Selecciona un archivo de imagen válido.');
+      event.target.value = '';
+      return;
+    }
+
+    if (this._avatarObjectUrl) {
+      URL.revokeObjectURL(this._avatarObjectUrl);
+      this._avatarObjectUrl = null;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    this._avatarObjectUrl = objectUrl;
+    this.setState({ avatarFile: file, avatarPreviewUrl: objectUrl });
+  }
+
+  _clearAvatarObjectUrl() {
+    if (this._avatarObjectUrl) {
+      URL.revokeObjectURL(this._avatarObjectUrl);
+      this._avatarObjectUrl = null;
+    }
   }
 }
