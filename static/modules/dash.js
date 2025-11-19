@@ -121,24 +121,33 @@ const themeToggle = document.getElementById("themeToggle");
 // Referencia a la imagen del botón de settings:
 const settingsImage = document.querySelector(".settings_image");
 
-// Al cargar la página, aplica el tema oscuro por defecto:
-document.documentElement.classList.add("dark");
-settingsImage.src = "images/app/settingsBlack.png";
-themeToggle.checked = true;
-
-themeToggle.addEventListener("change", () => {
-    if (themeToggle.checked) {
-        // Activamos el modo oscuro
-        document.documentElement.classList.add("dark");
-        user_local.theme = "dark";
-        settingsImage.src = "images/app/settingsBlack.png";
-    } else {
-        // Regresamos al modo claro
-        document.documentElement.classList.remove("dark");
-        user_local.theme = "light";
-        settingsImage.src = "images/app/settings.png";
+// Manejo de tema con persistencia en localStorage
+const applyTheme = (theme) => {
+    const isDark = theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
+    if (settingsImage) {
+        settingsImage.src = isDark ? "images/app/settingsBlack.png" : "images/app/settings.png";
     }
-});
+    if (themeToggle) {
+        themeToggle.checked = isDark;
+    }
+    user_local.theme = isDark ? "dark" : "light";
+};
+
+const storedTheme = localStorage.getItem("temaApp");
+const initialTheme = storedTheme === "light" ? "light" : "dark";
+applyTheme(initialTheme);
+if (storedTheme !== "light" && storedTheme !== "dark") {
+    localStorage.setItem("temaApp", initialTheme);
+}
+
+if (themeToggle) {
+    themeToggle.addEventListener("change", () => {
+        const newTheme = themeToggle.checked ? "dark" : "light";
+        applyTheme(newTheme);
+        localStorage.setItem("temaApp", newTheme);
+    });
+}
 
 /*
 // MODAL CREAR GRUPOS
