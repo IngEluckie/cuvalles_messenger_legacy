@@ -2,6 +2,7 @@
 :root {
   --background-color: #f5f6fb;
   --surface-color: #ffffff;
+  --surface-elevated-color: #ffffff;
   --primary-color: #3b82f6;
   --secondary-color: #e0ecff;
   --tertiary-color: #fffd98;
@@ -9,12 +10,15 @@
   --text-secondary-color: #5b6470;
   --error-color: #b00020;
   --border-color: #dde1eb;
+  --border-thickness: 1px;
   --hover-color: #eef1f8;
   --shadow-color: rgba(15, 23, 42, 0.08);
   --bubble-outgoing-bg: #e9efff;
   --bubble-outgoing-text: var(--text-primary-color);
-  --bubble-incoming-bg: var(--primary-color);
+  --bubble-incoming-bg: #404a5c;
   --bubble-incoming-text: #ffffff;
+  --bubble-outgoing-hover-bg: #d7e0ff;
+  --bubble-incoming-hover-bg: #374156;
   --button-primary-bg: var(--primary-color);
   --button-primary-text: #ffffff;
   --button-primary-hover-bg: #2563eb;
@@ -30,20 +34,24 @@
 /* Variables para tema oscuro */
 :root.dark {
   --background-color: #18191f;
-  --surface-color: #202225;
+  --surface-color: #1f2127;
+  --surface-elevated-color: #262a33;
   --primary-color: #5865f2;
   --secondary-color: #30323a;
   --tertiary-color: #fffd98;
   --text-primary-color: #f4f5fb;
   --text-secondary-color: #b5bac9;
   --error-color: #ed4245;
-  --border-color: #2f3136;
+  --border-color: #3a3d44;
+  --border-thickness: 2px;
   --hover-color: #2a2d34;
   --shadow-color: rgba(0, 0, 0, 0.4);
-  --bubble-outgoing-bg: #2f3136;
-  --bubble-outgoing-text: var(--text-primary-color);
-  --bubble-incoming-bg: #5865f2;
+  --bubble-outgoing-bg: #6674ff;
+  --bubble-outgoing-text: #f4f5fb;
+  --bubble-incoming-bg: #404a5c;
   --bubble-incoming-text: #ffffff;
+  --bubble-outgoing-hover-bg: #606ef5;
+  --bubble-incoming-hover-bg: #374156;
   --button-primary-bg: #5865f2;
   --button-primary-text: #ffffff;
   --button-primary-hover-bg: #4752c4;
@@ -74,8 +82,8 @@ html, body {
 
 /* Navbar */
 .navbar {
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated-color);
+  border: var(--border-thickness) solid var(--border-color);
   padding: 8px; /* en lugar de 16px */
   margin: 8px;  /* en lugar de 16px 16px 8px 16px */
   border-radius: 8px;
@@ -165,8 +173,8 @@ html, body {
 
 /* Contenedor principal */
 .container {
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-elevated-color);
+  border: var(--border-thickness) solid var(--border-color);
   padding: 16px;
   margin: 16px;
   margin-top: 8px;
@@ -180,7 +188,7 @@ html, body {
 
 /* Barra lateral (chats) - Estado colapsado y transición al expandirse */
 .chats {
-  border: 1px solid var(--border-color);
+  border: var(--border-thickness) solid var(--border-color);
   height: 80vh;
   width: 80px; /* Ajustado de 60px a 80px */
   border-radius: 8px;
@@ -262,7 +270,7 @@ html, body {
 
 /* Área principal de chat */
 .main {
-  border: 1px solid var(--border-color);
+  border: var(--border-thickness) solid var(--border-color);
   height: 80vh;
   flex: 1; /* ocupa el resto del espacio */
   border-radius: 8px;
@@ -278,7 +286,7 @@ html, body {
 }
 
 .info {
-  border: 1px solid var(--border-color);
+  border: var(--border-thickness) solid var(--border-color);
   height: 80vh;
   width: 250px;
   border-radius: 8px;
@@ -433,17 +441,46 @@ html, body {
   margin: 4px 0;
   word-wrap: break-word;
   box-shadow: 0 6px 16px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .message-item.mine {
   align-self: flex-end;
   background-color: var(--bubble-outgoing-bg);
   color: var(--bubble-outgoing-text);
   text-align: right;
+  align-items: flex-end;
 }
 .message-item.theirs {
   align-self: flex-start;
   background-color: var(--bubble-incoming-bg);
   color: var(--bubble-incoming-text);
+  text-align: left;
+  align-items: flex-start;
+}
+.message-item.mine:hover {
+  background-color: var(--bubble-outgoing-hover-bg);
+}
+.message-item.theirs:hover {
+  background-color: var(--bubble-incoming-hover-bg);
+}
+
+.message-author {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+.message-content {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  text-align: inherit;
+}
+.message-date {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-align: inherit;
 }
 
 .unread-badge {
