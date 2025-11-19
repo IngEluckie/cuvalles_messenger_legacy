@@ -1,0 +1,927 @@
+/* Variables para tema claro (por defecto) */
+:root {
+  --background-color: #f5f6fb;
+  --surface-color: #ffffff;
+  --primary-color: #3b82f6;
+  --secondary-color: #e0ecff;
+  --tertiary-color: #fffd98;
+  --text-primary-color: #1f2933;
+  --text-secondary-color: #5b6470;
+  --error-color: #b00020;
+  --border-color: #dde1eb;
+  --hover-color: #eef1f8;
+  --shadow-color: rgba(15, 23, 42, 0.08);
+  --bubble-outgoing-bg: #e9efff;
+  --bubble-outgoing-text: var(--text-primary-color);
+  --bubble-incoming-bg: var(--primary-color);
+  --bubble-incoming-text: #ffffff;
+  --button-primary-bg: var(--primary-color);
+  --button-primary-text: #ffffff;
+  --button-primary-hover-bg: #2563eb;
+  --button-secondary-bg: #e8ecf7;
+  --button-secondary-text: var(--text-primary-color);
+  --button-secondary-hover-bg: #d0d7e9;
+  --button-danger-bg: var(--error-color);
+  --button-danger-text: #ffffff;
+  --button-danger-hover-bg: #8c001b;
+  --input-focus-ring: rgba(59, 130, 246, 0.32);
+}
+
+/* Variables para tema oscuro */
+:root.dark {
+  --background-color: #18191f;
+  --surface-color: #202225;
+  --primary-color: #5865f2;
+  --secondary-color: #30323a;
+  --tertiary-color: #fffd98;
+  --text-primary-color: #f4f5fb;
+  --text-secondary-color: #b5bac9;
+  --error-color: #ed4245;
+  --border-color: #2f3136;
+  --hover-color: #2a2d34;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --bubble-outgoing-bg: #2f3136;
+  --bubble-outgoing-text: var(--text-primary-color);
+  --bubble-incoming-bg: #5865f2;
+  --bubble-incoming-text: #ffffff;
+  --button-primary-bg: #5865f2;
+  --button-primary-text: #ffffff;
+  --button-primary-hover-bg: #4752c4;
+  --button-secondary-bg: #4f545c;
+  --button-secondary-text: #ffffff;
+  --button-secondary-hover-bg: #686d73;
+  --button-danger-bg: #ed4245;
+  --button-danger-text: #ffffff;
+  --button-danger-hover-bg: #c03537;
+  --input-focus-ring: rgba(88, 101, 242, 0.35);
+}
+
+/* Global resets y tipografía */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-primary-color);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  padding: 8px; /* en lugar de 16px */
+  margin: 8px;  /* en lugar de 16px 16px 8px 16px */
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center; 
+  justify-content: space-between;
+  box-shadow: 0 12px 30px var(--shadow-color);
+}
+
+/* Usuario en navbar */
+.user {
+  /* Eliminamos width: 50px; para que no fuerce la altura */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px; /* un pequeño espacio entre la foto y el resto */
+}
+
+.userImage {
+  /* Antes ocupaba todo el contenedor. Ahora la hacemos más pequeña */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 8px;
+  object-fit: cover;
+  border: 2px solid var(--button-primary-bg);
+  transition: transform 0.3s ease;
+}
+
+.userImage:hover {
+  transform: scale(1.05);
+}
+.username {
+  margin: 0;
+  font-weight: 500;
+}
+.userInfo {
+  margin-left: 8px;
+}
+.disposicion {
+  margin: 0;
+  color: var(--text-secondary-color);
+  font-size: 0.9rem;
+}
+
+/* Centro de la navbar (búsqueda y botón) */
+.nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* Input de búsqueda */
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background-color: var(--surface-color);
+  color: var(--text-primary-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+/* Botón de ajustes */
+.settings {
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+  overflow: hidden;
+  width: 60px;  /* en lugar de 60px */
+  height: 60px; /* en lugar de auto o 60px */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.5s ease;
+}
+.settings:hover {
+  transform: rotate(100deg);
+}
+.settings_image {
+  width: 100%; /* en lugar de 80% */
+  height: auto;
+}
+
+/* Contenedor principal */
+.container {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  margin: 16px;
+  margin-top: 8px;
+  height: 82vh;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  /* La barra lateral y el área principal se adaptan; .main tomará el espacio restante */
+}
+
+/* Barra lateral (chats) - Estado colapsado y transición al expandirse */
+.chats {
+  border: 1px solid var(--border-color);
+  height: 80vh;
+  width: 80px; /* Ajustado de 60px a 80px */
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--surface-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: width 0.3s ease;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.chats:hover {
+  width: 250px; /* Se mantiene el expandido a 250px, o el valor que prefieras */
+  opacity: 1;
+  overflow-y: auto;
+}
+.chats::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.chats:hover::-webkit-scrollbar {
+  width: 8px;
+}
+.chats:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chats:hover::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 4px;
+}
+
+/* Estilo de cada chat */
+.chatbox {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 5px;
+  width: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+.chatbox:hover {
+  background-color: var(--hover-color);
+}
+
+.chat-attachment-thumb {
+  max-width: 160px;
+  max-height: 160px;
+  border-radius: 6px;
+  margin: 2px 0;
+}
+
+.chat_image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 5px;
+  border: 3px solid var(--button-primary-bg);
+  object-fit: cover;
+}
+
+/* El texto de cada chat (nombre) se oculta en estado colapsado y aparece al expandir */
+.chat_info {
+  margin-left: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+.chats:hover .chat_info {
+  opacity: 1;
+}
+
+/* Área principal de chat */
+.main {
+  border: 1px solid var(--border-color);
+  height: 80vh;
+  flex: 1; /* ocupa el resto del espacio */
+  border-radius: 8px;
+  transition: flex 0.5s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background-color: var(--surface-color);
+  box-shadow: 0 12px 30px var(--shadow-color);
+  margin-left: 16px; /* separación entre la barra lateral y el área principal */
+  margin-right: 16px;
+}
+
+.info {
+  border: 1px solid var(--border-color);
+  height: 80vh;
+  width: 250px;
+  border-radius: 8px;
+  overflow-y: auto;
+  background-color: var(--surface-color);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  transition: width 0.3s ease;
+  position: relative; /* Necesario para posicionar el botón de cerrado */
+  box-shadow: 0 12px 30px var(--shadow-color);
+}
+
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  color: var(--text-secondary-color);
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--avatar-bg, var(--border-color)); /* Color base si no hay imagen */
+  margin-bottom: 16px;
+}
+
+.name {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 8px 0 4px;
+  text-align: center;
+}
+
+.role {
+  font-size: 1em;
+  color: var(--text-secondary-color);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.description {
+  font-size: 0.9em;
+  color: var(--text-secondary-color);
+  text-align: center;
+}
+
+
+/* Barra inferior (input y botón para enviar mensaje) */
+.static {
+  width: 100%;
+  padding: 8px;
+  background-color: var(--surface-color);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  box-sizing: border-box;
+}
+.messageInput {
+  flex: 1;
+  padding: 10px;
+  margin-right: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background-color: var(--surface-color);
+  color: var(--text-primary-color);
+}
+.sendMessage {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 20px;
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.sendMessage:hover {
+  background-color: var(--button-primary-hover-bg);
+  box-shadow: 0 6px 14px var(--shadow-color);
+}
+
+.attachFile {
+  padding: 10px 16px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 20px;
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.attachFile:hover {
+  background-color: var(--button-primary-hover-bg);
+  box-shadow: 0 6px 14px var(--shadow-color);
+}
+
+/* Contenedor de la conversación */
+.chat-header-left {
+  display: flex;
+  align-items: center;   /* Centra verticalmente */
+  justify-content: center; /* Centra horizontalmente */
+  gap: 10px;             /* Espacio entre la imagen y el texto */
+  margin-top: 10px;
+}
+
+.chat-header-profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 8px;
+  object-fit: cover;
+  /* Borde compacto, controlado por tema */
+  transition: transform 0.3s ease;
+}
+
+.conversation {
+  flex: 1;
+  width: 100%;
+  padding: 16px;
+  background-color: var(--surface-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  border: none;
+  border-radius: 8px;
+}
+.conversation::-webkit-scrollbar {
+  width: 8px;
+}
+.conversation::-webkit-scrollbar-track {
+  background-color: var(--surface-color);
+}
+.conversation::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 4px;
+}
+
+/* Mensajes */
+.message-item {
+  max-width: 60%;
+  padding: 10px;
+  border-radius: 20px;
+  margin: 4px 0;
+  word-wrap: break-word;
+  box-shadow: 0 6px 16px var(--shadow-color);
+}
+.message-item.mine {
+  align-self: flex-end;
+  background-color: var(--bubble-outgoing-bg);
+  color: var(--bubble-outgoing-text);
+  text-align: right;
+}
+.message-item.theirs {
+  align-self: flex-start;
+  background-color: var(--bubble-incoming-bg);
+  color: var(--bubble-incoming-text);
+}
+
+.unread-badge {
+  position: absolute;
+  top: 6px;           /* ajusta según te convenga */
+  right: 6px;         /* ajusta según te convenga */
+  z-index: 10;        /* para que siempre quede encima */
+  display: none;      /* se muestra dinámicamente */
+  /* tus estilos de badge actuales */
+  min-width:18px;
+  padding:2px 4px;
+  font-size:0.7rem;
+  background: var(--button-danger-bg);
+  color: var(--button-danger-text);
+  border-radius:999px;
+  text-align:center;
+}
+
+.message-author {
+  display:block;
+  font-size:0.75rem;
+  font-weight:600;
+  margin-bottom:2px;
+}
+.message-item.mine .message-author { display:none; } /* opcional */
+
+
+
+/* Estilo general para botones */
+button {
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 999px;
+  font-weight: 500;
+}
+button:hover {
+  background-color: var(--button-primary-hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px var(--shadow-color);
+}
+button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+.settings {
+  background-color: transparent;
+  color: inherit;
+  box-shadow: none;
+  padding: 0;
+}
+.settings:hover {
+  background-color: transparent;
+  box-shadow: none;
+}
+.close-btn,
+.btn-eliminar,
+.icon-btn {
+  background-color: transparent;
+  color: inherit;
+  box-shadow: none;
+  transform: none;
+  padding: 0;
+}
+.close-btn:hover,
+.btn-eliminar:hover,
+.icon-btn:hover {
+  background-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Errores */
+.error {
+  color: var(--error-color);
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+  background-color: var(--surface-color);
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  width: 60%;
+  max-width: 800px;
+  box-shadow: 0 24px 48px var(--shadow-color);
+  position: relative;
+  border-radius: 8px;
+}
+.close {
+  color: var(--text-secondary-color);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.close:hover {
+  color: var(--text-primary-color);
+}
+
+/* Encabezado del modal */
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.profile-pic {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+.user-info-section {
+  display: flex;
+  flex-direction: column;
+}
+.user-info-section h2 {
+  margin: 0;
+  margin-bottom: 8px;
+  font-size: 1.5rem;
+}
+.profile-options {
+  display: flex;
+  gap: 10px;
+}
+.btn-option {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+.btn-option:hover {
+  background-color: var(--button-secondary-hover-bg);
+}
+
+/* Botón de cambio de tema */
+.btn-tema {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+.btn-tema:hover {
+  background-color: var(--button-secondary-hover-bg);
+}
+
+/* Área de status en modal */
+.status-textarea {
+  width: 100%;
+  height: 150px;
+  resize: none;
+  margin-bottom: 20px;
+  padding: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--surface-color);
+  color: var(--text-primary-color);
+}
+
+.search-input:focus,
+.messageInput:focus,
+.input-text:focus,
+.status-textarea:focus,
+.desc-area:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--input-focus-ring);
+  background-color: var(--surface-color);
+}
+
+/* Footer del modal */
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+}
+.btn-cancelar,
+.btn-guardar {
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 999px;
+}
+.btn-cancelar {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  margin-right: 10px;
+}
+.btn-cancelar:hover {
+  background-color: var(--button-secondary-hover-bg);
+}
+.btn-guardar {
+  background-color: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+.btn-guardar:hover {
+  background-color: var(--button-primary-hover-bg);
+}
+
+/* ---------- Modal “Crear grupo” ---------- */
+.crear-grupo-modal {
+  width: 80%;
+  max-width: 900px;
+}
+
+/* Fila “Nombre del grupo:” */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.form-row .form-label {
+  white-space: nowrap;
+  font-weight: 500;
+}
+.input-text {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--surface-color);
+  color: var(--text-primary-color);
+}
+
+/* Zona principal con dos columnas */
+.pick-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Buscador + lista */
+.buscador {
+  display: flex;
+  flex-direction: column;
+}
+.buscador .input-text {
+  margin-bottom: 8px;
+}
+
+/* Lista de usuarios (scrollable) */
+.lista-usuarios,
+.lista-seleccionados {
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px;
+}
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.user-item:hover {
+  background: var(--hover-color);
+}
+.user-item img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Columna de seleccionados */
+.seleccionados h3 {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* Item en “Seleccionados” –– puedes diferenciarlo si quieres */
+.seleccionado-item {
+  background: var(--hover-color);
+}
+
+/* ========== Panel de configuración de grupo ========== */
+.conf-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.conf-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.conf-mute {
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  margin-top: 40px;
+}
+.conf-name-row {
+  display: flex;
+  align-items: center;
+  margin-top: 40px;
+  gap: 8px;
+}
+.conf-name-row h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0 8px;
+}
+.desc-area {
+  width: 100%;
+  min-height: 80px;
+  resize: none;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--surface-color);
+  color: var(--text-primary-color);
+  font-family: inherit;
+}
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.member-menu {
+  margin-left: auto;
+}
+.conf-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: center;
+}
+.btn-leave {
+  background-color: var(--button-danger-bg);
+  color: var(--button-danger-text);
+  border: none;
+  padding: 10px 24px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.btn-leave:hover {
+  background-color: var(--button-danger-hover-bg);
+  box-shadow: 0 6px 14px var(--shadow-color);
+}
+
+/* Footer: hereda de .modal-footer existente */
+/* (ya tienes .btn-cancelar y .btn-crear definidos) */
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  .crear-grupo-modal {
+    width: 92%;
+  }
+  .pick-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Responsive */
+@media (max-width: 375px) {
+  .chat_info {
+    display: none;
+  }
+}
+
+/* Switch para tema oscuro */
+.theme-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border-color);
+  transition: 0.4s;
+  border-radius: 34px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: var(--surface-color);
+  transition: 0.4s;
+  border-radius: 50%;
+}
+.switch input:checked + .slider {
+  background-color: var(--button-primary-bg);
+}
+.switch input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Aseguramos que en modo oscuro se apliquen las variables */
+html, body {
+  background-color: var(--background-color);
+  color: var(--text-primary-color);
+}
+.navbar, .container, .modal-content {
+  background-color: var(--surface-color);
+  border-color: var(--border-color);
+}

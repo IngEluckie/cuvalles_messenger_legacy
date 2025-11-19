@@ -1,0 +1,182 @@
+/* Reset y estilos básicos */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden; /* Evitar scroll si no es necesario */
+}
+
+/* Imagen de fondo */
+.background {
+    background: url('/images/app/cuvalles.jpeg') no-repeat center center;
+    background-size: cover;
+    /* Eliminé el filtro de desenfoque para mantener la claridad de la imagen */
+    /* filter: blur(4px); */
+    position: fixed; /* Cambiado a fixed para que permanezca fija al hacer scroll */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Asegura que la imagen esté detrás de todos los demás elementos */
+    opacity: 0.8; /* Opcional: ajusta la opacidad según prefieras */
+}
+
+/* Reloj */
+.clock {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #333;
+    font-size: 1.2em;
+    z-index: 2;
+    background: rgba(255,255,255,0.8);
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+/* Contenedor Modal */
+.modal-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    width: 300px;
+    padding: 20px;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 0px 30px rgba(0,0,0,0.2);
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.form-group {
+    text-align: left;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.password-group .password-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.password-group .password-wrapper input {
+    flex: 1;
+}
+
+.password-group .password-wrapper button {
+    margin-left: 10px;
+    background: #4285f4;
+    border: none;
+    color: #fff;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.password-group .password-wrapper button:hover {
+    background: #3072e6;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    background: #4285f4;
+    border: none;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.login-btn:hover {
+    background: #3072e6;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    /* Para tabletas */
+    .modal-container {
+        width: 80%;
+    }
+
+    .clock {
+        font-size: 1em;
+        padding: 8px 10px;
+        top: 10px;
+        right: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Para celulares */
+    .modal-container {
+        width: 90%;
+        padding: 0 10px;
+    }
+
+    .modal {
+        padding: 20px 15px;
+    }
+
+    .modal h2 {
+        font-size: 1.2em;
+    }
+
+    .form-group label {
+        font-size: 0.85em;
+    }
+
+    .form-group input, .password-group .password-wrapper input {
+        font-size: 0.85em;
+    }
+
+    .password-group .password-wrapper button {
+        padding: 6px;
+        font-size: 0.7em;
+    }
+
+    .login-btn {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+
+    .clock {
+        font-size: 0.9em;
+        padding: 5px 8px;
+        top: 5px;
+        right: 5px;
+    }
+}

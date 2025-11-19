@@ -1,0 +1,11 @@
+{
+  "name": "cuvalles-messenger",
+  "version": "1.0.0",
+  "description": "Plataforma de comunicación universitaria",
+  "main": "dash.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ing. Josue Ernesto Galindo Morales",
+  "license": "ISC"
+}

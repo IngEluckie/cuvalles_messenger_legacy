@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUVALLES Messenger</title>
+    <link rel="stylesheet" href="styles/dash.css"/>
+</head>
+<body>
+    <div class="navbar" id="navbar">
+        <!-- Sección izquierda: usuario -->
+        <div class="user" id="userInfo" style="display: flex; flex-direction: row;">
+            <img src="images/app/default_user.png" alt="userImage" class="userImage">
+            <div class="userInfo">
+                <p class="username" id="username">Username</p>
+                <div class="theme-switch-container" style="margin-top: 4px;">
+                  <span>Activo</span>
+                  <label class="switch">
+                    <input type="checkbox" id="disposicionToggle">
+                    <span class="slider"></span>
+                  </label>
+                  <span>Silencio</span>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Sección central: búsqueda + botón crear grupo -->
+        <div class="nav">
+            <input type="text" class="search-input" placeholder="Buscar..." id="searchInput">
+            <div id="searchResults" class="search-results" style="display: none;"></div>
+            <button class="btn-crear-grupo" style="border-radius: 25%, 25%;">Crear grupo</button>
+        </div>
+
+        <!-- Sección derecha: ajustes -->
+        <button class="settings">
+            <img src="images/app/settings.png" alt="" class="settings_image">
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="chats" id="chats">
+            <!--Aquí se modifica desde una instancia BarraLateral-->
+        </div>
+        <div class="main">
+            <div class="frase" style="text-align: center;">¡No chat seleccionado! <br> Selecciona un usuario para comunicarte </div>
+            <img src="images/app/no_conversation.png" alt="" class="default_conversation" style="height: 60%; width: 40%;">
+        </div>
+        <div class="info">
+          <button class="close-btn" id="close-btn">x</button>
+          <img src="images/app/default_user.png" class="avatar">
+          <h2 class="name">Nombre del Usuario</h2>
+          <p class="role">Estado:</p>
+          <p class="description">
+            Información adicional del usuario. Puedes agregar más detalles aquí si lo deseas.
+          </p>
+        </div>                
+    </div>
+
+    <!-- MODAL -->
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="modal-header">
+          <img 
+            id="profilePic"
+            src="images/app/default_user.png" 
+            alt="Foto de perfil" 
+            class="profile-pic"
+          />
+          <div class="user-info-section">
+            <h2 id="nombre-usuario">Pepe Pruebas</h2>
+            <div class="profile-options">
+              <button id="btn-cambiar-foto" class="btn-option">Cambiar foto de perfil</button>
+              <button id="btn-cambiar-nombre" class="btn-option">Cambiar nombre mostrado</button>
+              <!-- Input oculto para seleccionar nueva imagen -->
+              <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+            </div>
+          </div>
+        </div>
+
+        <div class="theme-switch-container">
+          <span>Claro</span>
+          <label class="switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+          </label>
+          <span>Oscuro</span>
+        </div>
+        
+        <textarea 
+          class="status-textarea" 
+          placeholder="¿Qué estás pensando?"
+        ></textarea>
+
+        <div class="modal-footer">
+          <button class="btn-cancelar">Cancelar</button>
+          <button class="btn-guardar">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL crear grupo -->
+    <div id="modalCrearGrupo" class="modal">
+      <div class="modal-content crear-grupo-modal">
+        <!-- Cierre -->
+        <span class="close" id="closeCrearGrupo">&times;</span>
+
+        <!-- Nombre del grupo -->
+        <div class="form-row">
+          <label for="nombreGrupo" class="form-label">Nombre del grupo:</label>
+          <input
+            type="text"
+            id="nombreGrupo"
+            class="input-text"
+            placeholder="Escribe…"
+          />
+        </div>
+
+        <!-- Descripción del grupo -->
+        <div class="form-row">
+          <label for="descripcionGrupo" class="form-label">Descripción:</label>
+          <textarea
+            id="descripcionGrupo"
+            class="input-text desc-area"
+            placeholder="Escribe una descripción…"
+          ></textarea>
+        </div>
+
+        <!-- Buscador + lista de usuarios / seleccionados -->
+        <div class="pick-section">
+          <!-- Columna izquierda -->
+          <div class="buscador">
+            <input
+              type="text"
+              id="buscarUsuario"
+              class="input-text"
+              placeholder="Escribe para buscar…"
+            />
+
+            <div class="opcionesUsuarios" id="usuariosOpciones">
+              <ul id="listaUsuarios" class="lista-usuarios">
+                <!-- Ejemplos hard-coded: sustitúyelos por render dinámico -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- Columna derecha -->
+          <div class="seleccionados" id="seleccionated">
+            <h3>Seleccionados:</h3>
+            <ul id="usuariosSeleccionados" class="lista-seleccionados">
+              <!-- Aquí se irán añadiendo los elegidos -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer"> 
+          <button class="btn-cancelar">Cancelar</button>
+          <button class="btn-crear" id="btn-iniciar-creacion">Crear</button>
+        </div>
+      </div>
+    </div>
+
+
+
+    <script type="module" src="modules/dash.js"></script>
+</body>
+</html>
