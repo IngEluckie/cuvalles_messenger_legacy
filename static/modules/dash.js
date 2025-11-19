@@ -121,23 +121,27 @@ const themeToggle = document.getElementById("themeToggle");
 // Referencia a la imagen del botón de settings:
 const settingsImage = document.querySelector(".settings_image");
 
-// Al cargar la página, aplica el tema oscuro por defecto:
-document.documentElement.classList.add("dark");
-settingsImage.src = "images/app/settingsBlack.png";
-themeToggle.checked = true;
+const applyTheme = (theme) => {
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+    settingsImage.src = "images/app/settingsBlack.png";
+    themeToggle.checked = true;
+  } else {
+    document.documentElement.classList.remove("dark");
+    settingsImage.src = "images/app/settings.png";
+    themeToggle.checked = false;
+  }
+  user_local.theme = theme;
+};
+
+const storedTheme = localStorage.getItem("temaApp");
+const initialTheme = storedTheme === "light" ? "light" : "dark";
+applyTheme(initialTheme);
 
 themeToggle.addEventListener("change", () => {
-    if (themeToggle.checked) {
-        // Activamos el modo oscuro
-        document.documentElement.classList.add("dark");
-        user_local.theme = "dark";
-        settingsImage.src = "images/app/settingsBlack.png";
-    } else {
-        // Regresamos al modo claro
-        document.documentElement.classList.remove("dark");
-        user_local.theme = "light";
-        settingsImage.src = "images/app/settings.png";
-    }
+  const selectedTheme = themeToggle.checked ? "dark" : "light";
+  applyTheme(selectedTheme);
+  localStorage.setItem("temaApp", selectedTheme);
 });
 
 /*
