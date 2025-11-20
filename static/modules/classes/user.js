@@ -4,7 +4,11 @@ export class User {
       this.username = "";
       this.theme = "";
       this.nombreCompleto = "";
-      this.sonido = true
+      this.sonido = true;
+      this._audio = {
+        message: this._createAudio("/sounds/message.wav"),
+        button: this._createAudio("/sounds/button.wav")
+      };
     }
   
     get window_url() {
@@ -126,28 +130,33 @@ export class User {
     }
 
     messageSound(){
-      const audio = new Audio("/sounds/message.wav")
-
-      if (this.sonido) {
-        audio.play()
-        .catch(error => {
-          console.error("Error al reproducir el sonido ", error)
-        })
-      } else {
-        return
-      }
+      this._playAudio("message");
     }
 
     botonSound() {
-      const audio = new Audio("/sounds/button.wav")
+      this._playAudio("button");
+    }
 
-      if (this.sonido) {
-        audio.play()
-        .catch(error => {
-          console.error("Error al reproducir el sonido ", error)
-        })
-      } else {
-        return
+    _createAudio(src) {
+      const audio = new Audio(src);
+      audio.preload = "auto";
+      if (typeof audio.load === "function") {
+        audio.load();
+      }
+      return audio;
+    }
+
+    _playAudio(type) {
+      if (!this.sonido) return;
+      const audio = this._audio?.[type];
+      if (!audio) return;
+      try {
+        audio.currentTime = 0;
+        audio.play().catch(error => {
+          console.error(`Error al reproducir el sonido ${type}:`, error);
+        });
+      } catch (error) {
+        console.error(`Error al reproducir el sonido ${type}:`, error);
       }
     }
 }

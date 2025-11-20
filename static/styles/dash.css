@@ -104,9 +104,8 @@ html, body {
 }
 
 .userImage {
-  /* Antes ocupaba todo el contenedor. Ahora la hacemos más pequeña */
-  width: 40px;
-  height: 40px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   margin-right: 8px;
   object-fit: cover;
