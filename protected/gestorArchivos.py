@@ -20,22 +20,26 @@ PARA LA GESTIÓN DE LOS ARCHIVOS: TODOS
 # Importamos librerías
 import os
 
-class GestorImagenesPerfil:
-    def __init__(self) -> None:
-        self.__basePath: str = os.path.dirname(__file__)
-        self.__folderPath: str = self.__getPath()
+class GestorImagenesBase:
+    """
+    Clase base reutilizable para manejar imágenes (normalizar/guardar) en una carpeta específica.
+    """
 
-    def __getPath(self) -> str:
-        folder = os.path.join(self.__basePath, "images", "users")
+    def __init__(self, folder_relative: str) -> None:
+        self._base_path: str = os.path.dirname(__file__)
+        self._folder_path: str = self._ensure_folder(folder_relative)
+
+    def _ensure_folder(self, folder_relative: str) -> str:
+        folder = os.path.join(self._base_path, folder_relative)
         os.makedirs(folder, exist_ok=True)  # Crea el directorio si no existe
         return folder
 
     def guardarArchivo(self, normalized_file: BytesIO, file_name: str) -> dict:
         """
-        Guarda el archivo normalizado en la ruta definida por __folderPath.
+        Guarda el archivo normalizado en la ruta definida por `_folder_path`.
         """
         try:
-            file_location = os.path.join(self.__folderPath, file_name)
+            file_location = os.path.join(self._folder_path, file_name)
             # Aseguramos que el puntero esté al inicio
             normalized_file.seek(0)
             with open(file_location, "wb") as f:
@@ -44,13 +48,13 @@ class GestorImagenesPerfil:
             return {"message": f"El archivo no fue guardado, error: {e}"}
         return {"message": "Archivo guardado exitosamente"}
 
-    def normalizarImagenFromBytes(self, file_bytes: bytes, original_filename: str, username: str):
+    def normalizarImagenFromBytes(self, file_bytes: bytes, original_filename: str, output_name: str):
         """
         Normaliza la imagen a partir de los bytes:
           - Verifica que la extensión sea .jpg o .jpeg.
           - Redimensiona la imagen a 500x500 píxeles.
           - Convierte la imagen a formato WEBP.
-          - Retorna un objeto BytesIO con la imagen procesada y el nuevo nombre (username.webp).
+          - Retorna un objeto BytesIO con la imagen procesada y el nuevo nombre con sufijo `.webp`.
         """
         file_extension = os.path.splitext(original_filename)[-1].lower()
         
@@ -67,10 +71,26 @@ class GestorImagenesPerfil:
             output = BytesIO()
             img.save(output, format="WEBP")
             output.seek(0)
-            new_file_name = f"{username}.webp"
+            new_file_name = f"{output_name}.webp"
             return output, new_file_name
         except Exception as e:
             raise Exception(f"Error al procesar la imagen: {e}")
+
+
+class GestorImagenesPerfil(GestorImagenesBase):
+    def __init__(self) -> None:
+        super().__init__(os.path.join("images", "users"))
+
+    def normalizarImagenFromBytes(self, file_bytes: bytes, original_filename: str, username: str):
+        return super().normalizarImagenFromBytes(file_bytes, original_filename, username)
+
+
+class GestorImagenesGrupos(GestorImagenesBase):
+    def __init__(self) -> None:
+        super().__init__(os.path.join("images", "groups"))
+
+    def normalizarImagenFromBytes(self, file_bytes: bytes, original_filename: str, group_identifier: str):
+        return super().normalizarImagenFromBytes(file_bytes, original_filename, group_identifier)
         
 def getLastFile(full_path):
     pass

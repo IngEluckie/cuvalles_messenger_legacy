@@ -224,7 +224,6 @@ async def get_my_chats(
         c.is_group,
         COALESCE(c.last_activity, c.created_at) AS last_activity,
         CASE
-            /* ---------- Chat 1 a 1 ---------- */
             WHEN c.is_group = 0 THEN (
                 SELECT u.username
                 FROM Usuarios AS u
@@ -232,18 +231,26 @@ async def get_my_chats(
                     SELECT cm2.user_id
                     FROM chat_members AS cm2
                     WHERE cm2.chat_id = c.chat_id
-                      AND cm2.user_id != ?         -- distinto del solicitante
+                      AND cm2.user_id != ?
                     LIMIT 1
                 )
             )
-            /* ---------- Chat grupal ---------- */
             ELSE (
                 SELECT ig.nombre
                 FROM info_grupos AS ig
                 WHERE ig.chat_id = c.chat_id
                 LIMIT 1
             )
-        END AS chat_name
+        END AS chat_name,
+        CASE
+            WHEN c.is_group = 1 THEN (
+                SELECT ig.avatar_path
+                FROM info_grupos AS ig
+                WHERE ig.chat_id = c.chat_id
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS chat_avatar_path
     FROM chats AS c
     INNER JOIN chat_members AS cm
         ON cm.chat_id = c.chat_id
@@ -260,7 +267,22 @@ async def get_my_chats(
          offset)
     )
 
-    return {"chats": results}
+    chats = []
+    for row in results or []:
+        avatar_url = None
+        avatar_path = row.get("chat_avatar_path")
+        if row["is_group"]:
+            if avatar_path:
+                avatar_url = f"/media/groups/{avatar_path}"
+            else:
+                avatar_url = "/images/app/grupo_default_image.png"
+        else:
+            avatar_url = None
+        row["chat_avatar_url"] = avatar_url
+        row.pop("chat_avatar_path", None)
+        chats.append(row)
+
+    return {"chats": chats}
 
 
 @router_chats.get("/get_chat/{chat_id}", tags=["Chats"])
@@ -669,7 +691,7 @@ async def get_group_info(
     # 2️⃣  Obtener nombre y descripción del grupo
     info_row = db.fetch_query(
         """
-        SELECT nombre, descripcion
+        SELECT nombre, descripcion, avatar_path
         FROM   info_grupos
         WHERE  chat_id = ?
         LIMIT  1
@@ -679,6 +701,9 @@ async def get_group_info(
     if not info_row:
         # Nunca debería pasar si la DB está coherente
         raise HTTPException(status_code=500, detail="No se encontró info del grupo.")
+
+    avatar_filename = info_row[0].get("avatar_path")
+    avatar_url = f"/media/groups/{avatar_filename}" if avatar_filename else None
 
     # 3️⃣  Obtener miembros (username, foto, rol)
     members_rows = db.fetch_query(
@@ -711,6 +736,7 @@ async def get_group_info(
         "descripcion": info_row[0]["descripcion"],
         "members":    members_rows,      # lista de dicts
         "is_admin":   is_admin,
+        "avatar_url": avatar_url,
     }
 
 
