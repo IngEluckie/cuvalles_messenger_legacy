@@ -11,6 +11,13 @@ from datetime import datetime
 import mimetypes
 from icecream import ic
 
+from protected.encryption import (
+    DecryptionError,
+    EncryptionError,
+    decrypt_text,
+    encrypt_text,
+)
+
 # Importamos la función de autenticación y el modelo de usuario actualizado
 from routers.authentication import current_user, User
 # Importamos la clase Database de nuestro singleton
@@ -49,15 +56,31 @@ def ensure_attachments_schema(db: Database) -> None:
 class MessageCreate(BaseModel):
     content: str
 
+
+def _decrypt_content_safe(ciphered: str) -> str:
+    try:
+        return decrypt_text(ciphered)
+    except DecryptionError:
+        return "[contenido no disponible]"
+
 def create_message(db: Database, chat_id: int, user_id: int, content: str) -> dict:
     """
     Inserta un nuevo mensaje en la tabla 'messages' y retorna el mensaje recién creado.
     """
+
+    try:
+        encrypted_content = encrypt_text(content)
+    except EncryptionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        )
+
     insert_query = """
         INSERT INTO messages (chat_id, user_id, content, created_at)
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
     """
-    db.execute_query(insert_query, (chat_id, user_id, content))
+    db.execute_query(insert_query, (chat_id, user_id, encrypted_content))
     
     # Obtener el ID del mensaje recién insertado
     row = db.fetch_query("SELECT last_insert_rowid() as message_id")
@@ -73,7 +96,10 @@ def create_message(db: Database, chat_id: int, user_id: int, content: str) -> di
     WHERE m.message_id = ?
     """
     msg_row = db.fetch_query(fetch_query, (new_id,))
-    return msg_row[0] if msg_row else {}
+    if msg_row:
+        msg_row[0]["content"] = _decrypt_content_safe(msg_row[0]["content"])
+        return msg_row[0]
+    return {}
 
 @router_chats.post("/{chat_id}/send_message")
 async def send_message_to_chat(
@@ -192,6 +218,7 @@ def fetch_chat_messages(db: Database, chat_id: int, limit: int = 20, offset: int
     rows = db.fetch_query(query, (chat_id, limit, offset)) or []
     mensajes: list[dict] = []
     for row in rows:
+        row["content"] = _decrypt_content_safe(row.get("content", ""))
         attachment = None
         if row.get("attachment_id"):
             attachment = {
@@ -449,12 +476,20 @@ async def send_file_to_chat(
         )
 
     # 4️⃣  Insertar mensaje placeholder
+    try:
+        placeholder_content = encrypt_text("[archivo adjunto]")
+    except EncryptionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        )
+
     db.execute_query(
         """
         INSERT INTO messages (chat_id, user_id, content, created_at)
-        VALUES (?, ?, '[archivo adjunto]', CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
         """,
-        (chat_id, user.user_iD)
+        (chat_id, user.user_iD, placeholder_content)
     )
     msg_id = db.fetch_query("SELECT last_insert_rowid() AS id")[0]["id"]
 
@@ -527,6 +562,8 @@ async def send_file_to_chat(
         """,
         (msg_id,),
     )[0]
+
+    mensaje["content"] = _decrypt_content_safe(mensaje.get("content", ""))
 
     attachment_payload = {
         "id": attachment_row["id"],
