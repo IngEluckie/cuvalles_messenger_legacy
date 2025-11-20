@@ -484,6 +484,10 @@ html, body {
   width: 100%;
   padding: 16px;
   background-color: var(--surface-color);
+  background-image: url("/images/app/chatBackground.png");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  background-position: center;
   display: flex;
   flex-direction: column;
   gap: 8px;
