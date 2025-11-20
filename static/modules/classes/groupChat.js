@@ -1,6 +1,8 @@
 // groupChat.js
 import { Chats } from "./chats.js";
 
+const browserUrl = window.location.origin;
+
 export class GroupChat extends Chats {
   /**
    * Por ahora hereda todo el comportamiento de Chats.
@@ -21,20 +23,68 @@ export class GroupChat extends Chats {
     this.description = "";
     this.members     = [];        // [{ id, username, avatar }, ...]
     this.role        = "regular"; // "admin" | "regular"
+    this.groupAvatar = "/images/app/grupo_default_image.png";
+    this._groupAvatarObjectUrl = null;
+
+    const lastChatType = sessionStorage.getItem("lastChatType");
+    const lastChatId = sessionStorage.getItem("lastChatId");
+    if (lastChatType === "group" && lastChatId) {
+      this.openGroupChat(parseInt(lastChatId, 10));
+    }
+  }
+
+  async openChatByChat(chatObj) {
+    if (chatObj?.is_group) {
+      await this.openGroupChat(chatObj.chat_id);
+      return;
+    }
+    return super.openChatByChat(chatObj);
+  }
+
+  async openGroupChat(chatId) {
+    try {
+      this.chatId = chatId;
+
+      const jwt = localStorage.getItem("jwt");
+      const infoRes = await fetch(`${browserUrl}/chats/grupo_info/${chatId}`, {
+        headers: { Authorization: `Bearer ${jwt}` }
+      });
+      if (!infoRes.ok) {
+        throw new Error(await infoRes.text());
+      }
+      const data = await infoRes.json();
+
+      this.otherUserUsername = data.nombre;
+      this.description = data.descripcion || "";
+      this.members = data.members || [];
+      this.role = data.is_admin ? "admin" : "regular";
+
+      await this.updateGroupAvatar(data.avatar_url);
+
+      await super.openChatByChat({
+        chat_id: chatId,
+        chat_name: data.nombre
+      });
+
+      sessionStorage.setItem("lastChatType", "group");
+    } catch (err) {
+      console.error("openGroupChat:", err);
+      alert("No se pudo abrir la conversación del grupo.");
+    }
   }
 
   renderChatUI(chatName) {
-    const defaultPic = "/images/app/default_user.png";
+    const defaultPic = this.groupAvatar || "/images/app/grupo_default_image.png";
     const headerTitle = chatName || `Chat con: ${this.otherUserUsername}`;
 
     this.mainContainer.innerHTML = `
       <div class="chat-header" id="chat-header">
         <div class="chat-header-left">
-          <!--img
+          <img
             class="chat-header-profile-pic"
             id="chat-profile-pic"
             src="${defaultPic}"
-          -->
+          >
           <div class="chat-header-info">
             <h3 class="chat-username">${headerTitle}</h3>
           </div>
@@ -74,10 +124,10 @@ export class GroupChat extends Chats {
         }
       });
 
-    this.userProfilePic(chatName).then(url => {
-      const img = document.getElementById("chat-profile-pic");
-      if (img) img.src = url;
-    });
+    const img = document.getElementById("chat-profile-pic");
+    if (img) {
+      img.src = this.groupAvatar || "/images/app/grupo_default_image.png";
+    }
 
     this.mainContainer
       .querySelector("#attachFileBtn")
@@ -92,5 +142,41 @@ export class GroupChat extends Chats {
     .addEventListener("click", () => {
       this.confGroup.open(this.chatId);   // ← envía el id
     });
+  }
+
+  async updateGroupAvatar(avatarUrl) {
+    this.clearGroupAvatarObjectUrl();
+    if (!avatarUrl) {
+      this.groupAvatar = "/images/app/grupo_default_image.png";
+      return;
+    }
+
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) {
+      this.groupAvatar = "/images/app/grupo_default_image.png";
+      return;
+    }
+    const endpoint = avatarUrl.startsWith("http")
+      ? avatarUrl
+      : `${browserUrl}${avatarUrl}`;
+
+    try {
+      const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${jwt}` } });
+      if (!res.ok) throw new Error(res.statusText);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      this._groupAvatarObjectUrl = objectUrl;
+      this.groupAvatar = objectUrl;
+    } catch (err) {
+      console.error("updateGroupAvatar:", err);
+      this.groupAvatar = "/images/app/grupo_default_image.png";
+    }
+  }
+
+  clearGroupAvatarObjectUrl() {
+    if (this._groupAvatarObjectUrl) {
+      URL.revokeObjectURL(this._groupAvatarObjectUrl);
+      this._groupAvatarObjectUrl = null;
+    }
   }
 }

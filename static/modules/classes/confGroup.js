@@ -13,6 +13,8 @@ export class ConfGroup {
 
     this.gm = opts.gm;  // referencia opcional a GroupManager
     this.chatManager = opts.chatManager || null;
+    this._groupAvatarObjectUrl = null;
+    this._currentGroupAvatarSource = null;
 
     /* Estado inicial */
     this.state = {
@@ -20,12 +22,16 @@ export class ConfGroup {
       nombre:      "",
       descripcion: "",
       members:     [],   // [{ user_id, username, foto_perfil, role }]
-      isAdmin:     false
+      isAdmin:     false,
+      avatarUrl:   null
     };
   }
 
   /* ───────── utilidades básicas ───────── */
-  hide() { this.container.style.display = "none"; }
+  hide() {
+    this.container.style.display = "none";
+    this.clearGroupAvatarObjectUrl();
+  }
   show() { this.container.style.display = "flex"; }
   regresarAlLogin() { window.location.href = browser_url + "/login.html"; }
   attachChatManager(manager) { this.chatManager = manager; }
@@ -36,11 +42,16 @@ export class ConfGroup {
     this.render();
     this.bindEvents();
     this.populateMemberAvatars();
+    this.populateGroupAvatar();
   }
 
   /* ───────── carga de datos ───────── */
   async load(chatId) {
     const jwt = localStorage.getItem("jwt");
+    if (!jwt) {
+      avatarEl.src = "/images/app/grupo_default_image.png";
+      return;
+    }
     if (!jwt) { this.regresarAlLogin(); return; }
 
     try {
@@ -52,7 +63,8 @@ export class ConfGroup {
         nombre:      data.nombre,
         descripcion: data.descripcion || "",
         members:     data.members,
-        isAdmin:     data.is_admin
+        isAdmin:     data.is_admin,
+        avatarUrl:   data.avatar_url || null
       });
     } catch (err) {
       console.error("Error al obtener info del grupo:", err);
@@ -70,6 +82,7 @@ export class ConfGroup {
       <div class="info-content-scroll">
         <!-- Encabezado -->
         <div class="conf-header">
+          <img id="conf-group-avatar" class="conf-avatar" src="/images/app/grupo_default_image.png" alt="${nombre}">
           <div class="conf-header-col">
             <div class="conf-name-row">
               <h2>${nombre}</h2>
@@ -175,8 +188,57 @@ export class ConfGroup {
         .catch(err => {
           console.warn(`No se pudo cargar la imagen de ${username}:`, err);
           img.src = "/images/app/default_user.png";
-        });
+      });
     });
+  }
+
+  populateGroupAvatar() {
+    const avatarEl = this.container.querySelector("#conf-group-avatar");
+    if (!avatarEl) return;
+
+    const avatarPath = this.state.avatarUrl;
+    if (!avatarPath) {
+      this.clearGroupAvatarObjectUrl();
+      this._currentGroupAvatarSource = null;
+      avatarEl.src = "/images/app/grupo_default_image.png";
+      return;
+    }
+
+    if (avatarPath === this._currentGroupAvatarSource && this._groupAvatarObjectUrl) {
+      avatarEl.src = this._groupAvatarObjectUrl;
+      return;
+    }
+
+    this.clearGroupAvatarObjectUrl();
+    this._currentGroupAvatarSource = avatarPath;
+
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) {
+      avatarEl.src = "/images/app/grupo_default_image.png";
+      return;
+    }
+
+    const endpoint = avatarPath.startsWith("http")
+      ? avatarPath
+      : `${browser_url}${avatarPath}`;
+
+    fetch(endpoint, {
+      headers: { Authorization: `Bearer ${jwt}` }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.blob();
+      })
+      .then(blob => {
+        const objectUrl = URL.createObjectURL(blob);
+        this._groupAvatarObjectUrl = objectUrl;
+        avatarEl.src = objectUrl;
+      })
+      .catch(err => {
+        console.warn("No se pudo cargar avatar del grupo:", err);
+        this.clearGroupAvatarObjectUrl();
+        avatarEl.src = "/images/app/grupo_default_image.png";
+      });
   }
 
   /* ───────── salir del grupo ───────── */
@@ -192,7 +254,7 @@ export class ConfGroup {
       if (!res.ok) throw new Error(await res.text());
       this.hide();
       // Recarga barra lateral si existe
-      if (window.barraLateralInstance?.loadChats) window.barraLateralInstance.loadChats(true);
+      if (window.barraLateralInstance?.reload) window.barraLateralInstance.reload();
     } catch (err) {
       console.error("Error al salir del grupo:", err);
       alert("No fue posible salir del grupo.");
@@ -201,4 +263,12 @@ export class ConfGroup {
 
   /* ───────── API pública ───────── */
   open(chatId) { this.show(); this.load(chatId); }
+
+  clearGroupAvatarObjectUrl() {
+    if (this._groupAvatarObjectUrl) {
+      URL.revokeObjectURL(this._groupAvatarObjectUrl);
+      this._groupAvatarObjectUrl = null;
+    }
+    this._currentGroupAvatarSource = null;
+  }
 }

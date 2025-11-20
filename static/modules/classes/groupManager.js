@@ -49,7 +49,11 @@ export class GroupManager {
   }
 
   /* ========= Métodos de visibilidad ========= */
-  hide() { this.container.style.display = 'none'; }
+  hide() {
+    this.container.style.display = 'none';
+    this._clearAvatarObjectUrl();
+    if (this.inputAvatarFile) this.inputAvatarFile.value = '';
+  }
   show() { this.container.style.display = 'block'; }
 
   /* ========= Gestión de estado ========= */
@@ -77,12 +81,12 @@ export class GroupManager {
     try {
       const data = await this.fetchGroupInfo(chatId);
       const miembros = (data.members || []).map(m => m.username);
-      if (!data.avatar_url) this._clearAvatarObjectUrl();
+      const avatarPreviewUrl = await this.prepareAvatarPreview(data.avatar_url);
       this.setState({
         nombre: data.nombre,
         descripcion: data.descripcion || '',
         miembros,
-        avatarPreviewUrl: data.avatar_url || '/images/app/grupo_default_image.png',
+        avatarPreviewUrl,
         avatarFile: null
       });
       this.show();
@@ -96,6 +100,8 @@ export class GroupManager {
   /* ========= Backend helpers ========= */
   async fetchGroupInfo(chatId) {
     const token = localStorage.getItem('jwt');
+    if (!token) throw new Error('Sesión no válida.');
+    if (!token) return '/images/app/grupo_default_image.png';
     const resp = await fetch(`${browser_url}/chats/grupo_info/${chatId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -121,6 +127,8 @@ export class GroupManager {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.detail || resp.statusText);
     }
+
+    return resp.json().catch(() => ({}));
   }
 
   async createGroup() {
@@ -141,6 +149,8 @@ export class GroupManager {
       const err = await resp.json().catch(() => ({}));
       throw new Error(err.detail || resp.statusText);
     }
+
+    return resp.json();
   }
 
   /* ========= Validación ========= */
@@ -220,8 +230,19 @@ export class GroupManager {
     // Submit
     this.btnSubmit.addEventListener('click', async () => {
       try {
-        if (this.state.modo === 'crear') await this.createGroup();
-        else await this.updateGroup();
+        let chatId = this.state.chatId;
+        if (this.state.modo === 'crear') {
+          const data = await this.createGroup();
+          chatId = data?.chat_id ?? null;
+          if (chatId && this.state.avatarFile) {
+            await this.uploadGroupAvatar(chatId);
+          }
+        } else {
+          await this.updateGroup();
+          if (this.state.avatarFile && chatId) {
+            await this.uploadGroupAvatar(chatId);
+          }
+        }
         alert(`Grupo “${this.state.nombre}” ${this.state.modo === 'crear' ? 'creado' : 'actualizado'} 🎉`);
         this.hide();
         this.onGrupoActualizado();
@@ -283,11 +304,6 @@ export class GroupManager {
       const username = img.dataset.username;
       if (!username) return;
 
-      if (img.dataset.objectUrl) {
-        URL.revokeObjectURL(img.dataset.objectUrl);
-        delete img.dataset.objectUrl;
-      }
-
       fetch(`${browser_url}/media/images/${encodeURIComponent(username)}.webp`, {
         headers: { Authorization: `Bearer ${jwt}` }
       })
@@ -297,13 +313,106 @@ export class GroupManager {
         })
         .then(blob => {
           const url = URL.createObjectURL(blob);
+          if (img.dataset.objectUrl) {
+            URL.revokeObjectURL(img.dataset.objectUrl);
+          }
           img.src = url;
-           img.dataset.objectUrl = url;
+          img.dataset.objectUrl = url;
         })
         .catch(() => {
           img.src = '/images/app/default_user.png';
         });
     });
+  }
+
+  async uploadGroupAvatar(chatId) {
+    const file = this.state.avatarFile;
+    if (!file) return null;
+
+    const token = localStorage.getItem('jwt');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const resp = await fetch(`${browser_url}/media/groups/${chatId}/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || resp.statusText);
+    }
+
+    const data = await resp.json().catch(() => ({}));
+    const avatarUrl = data?.avatar_url;
+    if (avatarUrl) {
+      const preview = await this.prepareAvatarPreview(avatarUrl);
+      this.setState({ avatarPreviewUrl: preview, avatarFile: null });
+
+      if (window.groupChats?.chatId && Number(window.groupChats.chatId) === Number(chatId)) {
+        try {
+          await window.groupChats.updateGroupAvatar(avatarUrl);
+          const headerImg = document.getElementById("chat-profile-pic");
+          if (headerImg && window.groupChats.groupAvatar) {
+            headerImg.src = window.groupChats.groupAvatar;
+          }
+        } catch (err) {
+          console.error("No se pudo actualizar la vista del grupo con el nuevo avatar:", err);
+        }
+      }
+
+      try {
+        window.barraLateralInstance?.updateGroupAvatar?.(chatId, avatarUrl);
+      } catch (err) {
+        console.error("No se pudo refrescar el avatar en la barra lateral:", err);
+      }
+
+      try {
+        if (window.configuracionGrupos?.state?.chatId === chatId) {
+          window.configuracionGrupos.setState({ avatarUrl });
+        }
+      } catch (err) {
+        console.error("No se pudo actualizar la vista de configuración de grupo:", err);
+      }
+    } else {
+      this.setState({ avatarFile: null });
+    }
+    if (this.inputAvatarFile) this.inputAvatarFile.value = '';
+    return data;
+  }
+
+  async prepareAvatarPreview(avatarUrl) {
+    if (!avatarUrl) {
+      this._clearAvatarObjectUrl();
+      return '/images/app/grupo_default_image.png';
+    }
+
+    if (avatarUrl.startsWith("blob:")) {
+      if (this._avatarObjectUrl && this._avatarObjectUrl !== avatarUrl) {
+        this._clearAvatarObjectUrl();
+      }
+      this._avatarObjectUrl = avatarUrl;
+      return avatarUrl;
+    }
+
+    this._clearAvatarObjectUrl();
+
+    const token = localStorage.getItem('jwt');
+    const isAbsolute = /^https?:\/\//i.test(avatarUrl) || avatarUrl.startsWith("data:");
+    const endpoint = isAbsolute ? avatarUrl : `${browser_url}${avatarUrl}`;
+
+    try {
+      const resp = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const blob = await resp.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      this._avatarObjectUrl = objectUrl;
+      return objectUrl;
+    } catch (err) {
+      console.error("prepareAvatarPreview:", err);
+      return '/images/app/grupo_default_image.png';
+    }
   }
 
   handleAvatarSelection(event) {

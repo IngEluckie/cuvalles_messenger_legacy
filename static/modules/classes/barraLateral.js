@@ -26,6 +26,7 @@ export class BarraLateral {
     this.chats     = [];       // [{ chat_id, chat_name, is_group }]
     this.unreadCounts = {};    // { chatId: count }
     this._intervals   = [];    // guarda setIntervals para limpiarlos
+    this._groupAvatarUrls = new Map(); // { chatId: { objectUrl, source } }
 
     this.render();
     this.loadChats();
@@ -79,6 +80,49 @@ export class BarraLateral {
       }
     } catch {/* silencioso */}
     return "/images/app/default_user.png";
+  }
+
+  async groupAvatarPic(avatarPath, chatId) {
+    if (!avatarPath) return "/images/app/grupo_default_image.png";
+    const cached = this._groupAvatarUrls.get(chatId);
+    if (cached && cached.source === avatarPath && cached.objectUrl) {
+      return cached.objectUrl;
+    }
+
+    if (cached?.objectUrl) {
+      URL.revokeObjectURL(cached.objectUrl);
+      this._groupAvatarUrls.delete(chatId);
+    }
+
+    const endpoint = avatarPath.startsWith("http")
+      ? avatarPath
+      : `${browserUrl}${avatarPath}`;
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) return "/images/app/grupo_default_image.png";
+
+    try {
+      const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${jwt}` } });
+      if (!res.ok) throw new Error(res.statusText);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      this._groupAvatarUrls.set(chatId, { objectUrl, source: avatarPath });
+      return objectUrl;
+    } catch (err) {
+      console.error("Error al obtener avatar de grupo:", err);
+      return "/images/app/grupo_default_image.png";
+    }
+  }
+
+  updateGroupAvatar(chatId, avatarUrl) {
+    if (!chatId || !avatarUrl) return;
+    const chat = this.chats.find(c => c.chat_id === chatId);
+    if (chat) {
+      chat.chat_avatar_url = avatarUrl;
+    }
+    this.groupAvatarPic(avatarUrl, chatId).then(url => {
+      const img = document.getElementById(`chat-img-${chatId}`);
+      if (img) img.src = url;
+    });
   }
 
   async checkUserOnline(username, chatId) {
@@ -141,7 +185,18 @@ export class BarraLateral {
       this._paintUnread(chat.chat_id);
 
       /* ───── Solo para chats 1-a-1: avatar y estado online ───── */
-      if (!chat.is_group) {
+      if (chat.is_group) {
+        if (chat.chat_avatar_url) {
+          this.groupAvatarPic(chat.chat_avatar_url, chat.chat_id).then(url => {
+            const img = document.getElementById(`chat-img-${chat.chat_id}`);
+            if (img) img.src = url;
+          });
+        } else if (this._groupAvatarUrls.has(chat.chat_id)) {
+          const entry = this._groupAvatarUrls.get(chat.chat_id);
+          if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+          this._groupAvatarUrls.delete(chat.chat_id);
+        }
+      } else {
         this.userProfilePic(chat.chat_name).then(url => {
           const img = document.getElementById(`chat-img-${chat.chat_id}`);
           if (img) img.src = url;
@@ -171,6 +226,10 @@ export class BarraLateral {
   reload() {
     this._intervals.forEach(clearInterval);
     this._intervals = [];
+    this._groupAvatarUrls.forEach(entry => {
+      if (entry?.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+    });
+    this._groupAvatarUrls.clear();
     this.chats      = [];
     this.offset     = 0;
     this.loading    = false;

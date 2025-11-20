@@ -632,7 +632,7 @@ window.user.getProfileImage().then(imageUrl => {
  * BARRA INFO-USERS
  */
 // callback para refrescar tu barra lateral tras crear/editar
-const recargarChats = () => barraLateralInstance.loadChats(true);
+const recargarChats = () => barraLateralInstance.reload();
 
 const groupManager = new GroupManager("#modalCrearGrupo", {
   onGrupoActualizado: recargarChats

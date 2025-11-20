@@ -37,7 +37,8 @@ export class Chats {
     /* ---------- Auto-recarga si hay chat previo ---------- */
     const lastChatId = sessionStorage.getItem("lastChatId");
     const lastChatName = sessionStorage.getItem("lastChatName");
-    if (lastChatId && lastChatName) {
+    const lastChatType = sessionStorage.getItem("lastChatType");
+    if (lastChatId && lastChatName && lastChatType !== "group") {
       // recarga la UI y la historia de mensajes
       this.openChatByChat({
         chat_id: lastChatId,
@@ -78,6 +79,7 @@ export class Chats {
       // persistir para recarga
       sessionStorage.setItem("lastChatId", this.chatId);
       sessionStorage.setItem("lastChatName", this.otherUserUsername);
+      sessionStorage.setItem("lastChatType", "single");
 
       this.renderChatUI(targetUsername);
       await this.renderMessages(this.messages, false);
@@ -96,6 +98,7 @@ export class Chats {
       // persistir para recarga
       sessionStorage.setItem("lastChatId", this.chatId);
       sessionStorage.setItem("lastChatName", this.otherUserUsername);
+      sessionStorage.setItem("lastChatType", "single");
 
       this.renderChatUI(this.otherUserUsername);
 
