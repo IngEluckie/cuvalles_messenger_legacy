@@ -9,6 +9,7 @@ import os
 # Importamos modulos y routers
 from routers import authentication, chats, configurations, websockets, images
 from database.singleton import Database
+from routers.systemTools.scheduler import start_scheduler, stop_scheduler
 
 # App instance
 app: FastAPI = FastAPI()
@@ -36,11 +37,13 @@ Eventos para la base de datos
 @app.on_event("startup")
 def startup_event():
     db = Database()  # Esto inicializa la conexión al iniciar la app
+    start_scheduler()
 
 @app.on_event("shutdown")
 def shutdown_event():
     db = Database()
     db.close_connection()
+    stop_scheduler()
 """
 -----------------------------
 """
