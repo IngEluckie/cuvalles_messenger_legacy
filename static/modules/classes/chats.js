@@ -296,10 +296,9 @@ export class Chats {
 
   buildDownloadMarkup(messageId, filename, label = "Descargar archivo") {
     const cleanName = this.normalizeFileName(filename || "archivo");
-    const safeName = this.escapeHtml(cleanName);
     const safeAttr = this.escapeAttr(cleanName);
     const safeLabel = this.escapeHtml(label);
-    return `<a href="#" class="chat-attachment-download" data-attachment-download="true" data-message-id="${messageId}" data-filename="${safeAttr}">📎 ${safeLabel} (${safeName})</a>`;
+    return `<a href="#" class="chat-attachment-download" data-attachment-download="true" data-message-id="${messageId}" data-filename="${safeAttr}">📎 ${safeLabel}</a>`;
   }
 
   async buildAttachmentContent(message) {
@@ -321,10 +320,7 @@ export class Chats {
               alt="${this.escapeAttr(displayName)}"
               class="chat-attachment-thumb"
             >
-            <div class="chat-attachment-meta">
-              <span class="chat-attachment-name">${this.escapeHtml(displayName)}</span>
-              ${this.buildDownloadMarkup(messageId, displayName, "Descargar")}
-            </div>
+            ${this.buildDownloadMarkup(messageId, displayName, "Descargar archivo")}
           </div>
         `;
       }
@@ -347,10 +343,11 @@ export class Chats {
             alt="${this.escapeAttr(data.filename)}"
             class="chat-attachment-thumb"
           >
-          <div class="chat-attachment-meta">
-            <span class="chat-attachment-name">${this.escapeHtml(data.filename)}</span>
-            ${this.buildDownloadMarkup(message.message_id, data.filename, "Descargar")}
-          </div>
+          ${this.buildDownloadMarkup(
+            message.message_id,
+            data.filename,
+            "Descargar archivo"
+          )}
         </div>
       `;
     }
@@ -383,11 +380,15 @@ export class Chats {
     enriched.forEach(m => {
       const isMine = parseInt(m.user_id) === parseInt(this.myUserId);
       const cls    = isMine ? "mine" : "theirs";
+      const hasAttachment = /chat-attachment/.test(m.content);
+      const classes = ["message-item", cls];
+      if (hasAttachment) classes.push("has-attachment");
+      const classAttr = classes.join(" ");
       const author = isMine
         ? ""
         : `<span class="message-author">${this.escapeHtml(m.username)}</span>`;
       html += `
-        <div class="message-item ${cls}">
+        <div class="${classAttr}">
           ${author}
           <div class="message-content">${m.content}</div>
           <span class="message-date">${m.created_at}</span>

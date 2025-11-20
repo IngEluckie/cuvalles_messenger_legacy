@@ -239,28 +239,20 @@ html, body {
   background-color: var(--hover-color);
 }
 
-.chat-attachment-thumb {
-  max-width: 160px;
-  max-height: 160px;
-  border-radius: 6px;
-  margin: 2px 0;
-}
-
 .chat-attachment {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
 }
 
-.chat-attachment-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.chat-attachment-name {
-  font-size: 0.82rem;
-  color: #4d4d4d;
+.chat-attachment-thumb {
+  width: 100%;
+  max-width: 260px;
+  max-height: 280px;
+  border-radius: 12px;
+  margin: 0;
 }
 
 .chat-attachment-download {
@@ -271,6 +263,14 @@ html, body {
 
 .chat-attachment-download:hover {
   text-decoration: underline;
+}
+
+.chat-attachment-meta {
+  display: none;
+}
+
+.chat-attachment-name {
+  display: none;
 }
 
 .chat_image {
@@ -499,6 +499,25 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+.message-item.has-attachment {
+  max-width: 320px;
+  width: fit-content;
+  padding: 12px;
+  align-items: center;
+}
+.message-item.has-attachment.mine,
+.message-item.has-attachment.theirs {
+  align-items: center;
+  text-align: center;
+}
+.message-item.has-attachment .message-content {
+  display: flex;
+  justify-content: center;
+}
+.message-item.has-attachment .message-date {
+  width: 100%;
+  text-align: center;
 }
 .message-item.mine {
   align-self: flex-end;
