@@ -50,13 +50,24 @@ export class Chats {
 
   /* ========== 1. mensajes entrantes (async) ========== */
   async handleIncomingMessage(message) {
-    if (
-      this.chatId &&
-      parseInt(message.chat_id) === parseInt(this.chatId)
-    ) {
+    if (!message || !message.chat_id) return;
+
+    const incomingChatId = Number(message.chat_id);
+    const activeChatId = this.chatId ? Number(this.chatId) : null;
+    const incomingUserId = message.user_id != null ? Number(message.user_id) : null;
+    const currentUserId = this.myUserId != null ? Number(this.myUserId) : null;
+
+    const isCurrentChat = activeChatId != null && incomingChatId === activeChatId;
+    const isOwnMessage = currentUserId != null && incomingUserId === currentUserId;
+
+    if (!isOwnMessage) {
+      // Reproduce el sonido aun si la conversación no está abierta.
+      this.user?.messageSound?.();
+    }
+
+    if (isCurrentChat) {
       await this.renderMessages([message], false);
       this.messages.push(message);
-      this.user.messageSound();
     }
   }
 
