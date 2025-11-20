@@ -347,6 +347,21 @@ html, body {
   box-sizing: border-box;
   flex: 1;
 }
+.info--group .info-content-scroll {
+  align-items: stretch;
+}
+.info--user .info-content-scroll {
+  align-items: center;
+  gap: 12px;
+  padding-top: 40px;
+  text-align: center;
+}
+.info--user .info-content-scroll .avatar {
+  align-self: center;
+}
+.info--user .info-content-scroll .description {
+  text-align: center;
+}
 .info-content-scroll::-webkit-scrollbar {
   display: none;
 }

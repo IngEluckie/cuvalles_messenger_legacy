@@ -77,6 +77,10 @@ export class ConfGroup {
   render() {
     const { nombre, descripcion, members, isAdmin } = this.state;
 
+    // Asegura estilos específicos para vista de grupo
+    this.container.classList.add("info--group");
+    this.container.classList.remove("info--user");
+
     this.container.innerHTML = /*html*/`
       <button class="close-btn">×</button>
       <div class="info-content-scroll">

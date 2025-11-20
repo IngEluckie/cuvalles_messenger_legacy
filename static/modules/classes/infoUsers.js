@@ -44,6 +44,8 @@ export class InfoUsers {
       const statusUser = data.status;  // Suponemos que data.status es un string con la información del estado
 
       // Insertamos el HTML formateado en el contenedor
+      this.container.classList.add("info--user");
+      this.container.classList.remove("info--group");
       this.container.innerHTML = `
         <button class="close-btn" id="close-btn">x</button>
         <div class="info-content-scroll">
