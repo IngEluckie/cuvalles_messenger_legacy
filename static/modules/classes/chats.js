@@ -22,6 +22,7 @@ export class Chats {
     this.messages = [];
     this.limit = 20;
     this.offset = 0;
+    this.attachmentCache = new Map();
     this.conversationElement = null;
     this.user = user;
     this.infoUsersBarra = infoUsersBarra;
@@ -186,6 +187,11 @@ export class Chats {
     `;
 
     this.conversationElement = this.mainContainer.querySelector("#conversation");
+    if (this.conversationElement) {
+      this.conversationElement.addEventListener("click", e =>
+        this.handleConversationClick(e)
+      );
+    }
 
     this.mainContainer
       .querySelector("#sendMessageBtn")
@@ -223,19 +229,138 @@ export class Chats {
   }
 
   /* ========== 5. adjuntos util / render ========== */
-  async retrieveFileURL(messageId) {
-    const jwt = localStorage.getItem("jwt");
-    if (!jwt) return "[archivo adjunto]";
-    try {
-      const r = await fetch(`${browserUrl}/chats/attachments/${messageId}`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      return r.ok
-        ? `${browserUrl}/chats/attachments/${messageId}`
-        : "[archivo adjunto]";
-    } catch {
-      return "[archivo adjunto]";
+  async getAttachmentData(messageId, force = false) {
+    if (!force && this.attachmentCache.has(messageId)) {
+      return this.attachmentCache.get(messageId);
     }
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) return null;
+    try {
+      const response = await fetch(
+        `${browserUrl}/chats/attachments/${messageId}`,
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      );
+      if (!response.ok) return null;
+      const disposition = response.headers.get("Content-Disposition") || "";
+      const rawName =
+        this.parseFilenameFromDisposition(disposition) || `archivo_${messageId}`;
+      const filename = this.normalizeFileName(rawName);
+      const blob = await response.blob();
+      const mimeType = blob.type || response.headers.get("Content-Type") || "";
+      const objectUrl = URL.createObjectURL(blob);
+      const data = { objectUrl, mimeType, filename };
+      this.attachmentCache.set(messageId, data);
+      return data;
+    } catch (error) {
+      console.error("getAttachmentData:", error);
+      return null;
+    }
+  }
+
+  parseFilenameFromDisposition(disposition = "") {
+    const utf8Match = disposition.match(/filename\*=(?:UTF-8'')?([^;]+)/i);
+    if (utf8Match && utf8Match[1]) {
+      const value = utf8Match[1].replace(/["']/g, "").trim();
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value;
+      }
+    }
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return match ? match[1].replace(/["']/g, "").trim() : null;
+  }
+
+  escapeHtml(value = "") {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  escapeAttr(value = "") {
+    return this.escapeHtml(value);
+  }
+
+  normalizeFileName(name = "") {
+    const trimmed = String(name).trim();
+    const parts = trimmed.split(/[/\\]/);
+    return parts.pop() || "archivo";
+  }
+
+  isImageMime(mime = "") {
+    return /^image\//i.test(mime);
+  }
+
+  buildDownloadMarkup(messageId, filename, label = "Descargar archivo") {
+    const cleanName = this.normalizeFileName(filename || "archivo");
+    const safeName = this.escapeHtml(cleanName);
+    const safeAttr = this.escapeAttr(cleanName);
+    const safeLabel = this.escapeHtml(label);
+    return `<a href="#" class="chat-attachment-download" data-attachment-download="true" data-message-id="${messageId}" data-filename="${safeAttr}">📎 ${safeLabel} (${safeName})</a>`;
+  }
+
+  async buildAttachmentContent(message) {
+    const attachment = message.attachment || {};
+    const messageId = message.message_id;
+    const displayName = this.normalizeFileName(
+      attachment.original_name || attachment.file_name || `archivo_${messageId}`
+    );
+    const mimeType = attachment.mime_type || "";
+    const shouldPreview = attachment.is_image || this.isImageMime(mimeType);
+
+    if (shouldPreview) {
+      const data = await this.getAttachmentData(messageId);
+      if (data?.objectUrl) {
+        return `
+          <div class="chat-attachment chat-attachment-image">
+            <img
+              src="${data.objectUrl}"
+              alt="${this.escapeAttr(displayName)}"
+              class="chat-attachment-thumb"
+            >
+            <div class="chat-attachment-meta">
+              <span class="chat-attachment-name">${this.escapeHtml(displayName)}</span>
+              ${this.buildDownloadMarkup(messageId, displayName, "Descargar")}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    return this.buildDownloadMarkup(messageId, displayName);
+  }
+
+  async buildLegacyAttachmentContent(message) {
+    const data = await this.getAttachmentData(message.message_id);
+    if (!data) {
+      return this.buildDownloadMarkup(message.message_id, "archivo");
+    }
+
+    if (this.isImageMime(data.mimeType)) {
+      return `
+        <div class="chat-attachment chat-attachment-image">
+          <img
+            src="${data.objectUrl}"
+            alt="${this.escapeAttr(data.filename)}"
+            class="chat-attachment-thumb"
+          >
+          <div class="chat-attachment-meta">
+            <span class="chat-attachment-name">${this.escapeHtml(data.filename)}</span>
+            ${this.buildDownloadMarkup(message.message_id, data.filename, "Descargar")}
+          </div>
+        </div>
+      `;
+    }
+
+    return this.buildDownloadMarkup(message.message_id, data.filename);
+  }
+
+  formatMessageText(content) {
+    if (typeof content !== "string") return "";
+    return this.escapeHtml(content).replace(/\n/g, "<br>");
   }
 
   async renderMessages(msgList, prepend = false) {
@@ -243,16 +368,12 @@ export class Chats {
 
     const enriched = await Promise.all(
       msgList.map(async m => {
-        if (m.content === "[archivo adjunto]") {
-          const url = await this.retrieveFileURL(m.message_id);
-          if (url !== "[archivo adjunto]") {
-            const isImg = /\.(jpe?g|png|webp|gif)$/i.test(url);
-            m.content = isImg
-              ? `<a href="${url}" target="_blank">
-                   <img src="${url}" class="chat-attachment-thumb">
-                 </a>`
-              : `<a href="${url}" target="_blank">📎 Descargar archivo</a>`;
-          }
+        if (m?.attachment) {
+          m.content = await this.buildAttachmentContent(m);
+        } else if (m.content === "[archivo adjunto]") {
+          m.content = await this.buildLegacyAttachmentContent(m);
+        } else {
+          m.content = this.formatMessageText(m.content);
         }
         return m;
       })
@@ -262,7 +383,9 @@ export class Chats {
     enriched.forEach(m => {
       const isMine = parseInt(m.user_id) === parseInt(this.myUserId);
       const cls    = isMine ? "mine" : "theirs";
-      const author = isMine ? "" : `<span class="message-author">${m.username}</span>`;
+      const author = isMine
+        ? ""
+        : `<span class="message-author">${this.escapeHtml(m.username)}</span>`;
       html += `
         <div class="message-item ${cls}">
           ${author}
@@ -279,6 +402,49 @@ export class Chats {
     } else {
       this.conversationElement.insertAdjacentHTML("beforeend", html);
       this.conversationElement.scrollTop = this.conversationElement.scrollHeight;
+    }
+  }
+
+  handleConversationClick(event) {
+    const target = event.target.closest("[data-attachment-download]");
+    if (!target) return;
+    event.preventDefault();
+    const messageId = target.getAttribute("data-message-id");
+    const filename = target.getAttribute("data-filename");
+    if (messageId) {
+      this.downloadAttachment(messageId, filename);
+    }
+  }
+
+  async downloadAttachment(messageId, filenameHint) {
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) return;
+    try {
+      const response = await fetch(
+        `${browserUrl}/chats/attachments/${messageId}`,
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      );
+      if (!response.ok) {
+        console.error("downloadAttachment:", response.statusText);
+        return;
+      }
+      const disposition = response.headers.get("Content-Disposition") || "";
+      const rawName =
+        this.parseFilenameFromDisposition(disposition) ||
+        filenameHint ||
+        `archivo_${messageId}`;
+      const filename = this.normalizeFileName(rawName);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (error) {
+      console.error("downloadAttachment:", error);
     }
   }
 
@@ -303,10 +469,11 @@ export class Chats {
       );
       if (!r.ok) return console.error("Error:", r.statusText);
       const newMsg = await r.json();
+      const outgoing = JSON.parse(JSON.stringify(newMsg));
       await this.renderMessages([newMsg], false);
       this.messages.push(newMsg);
       textarea.value = "";
-      this.ws?.sendMessage?.(newMsg);
+      this.ws?.sendMessage?.(outgoing);
     } catch (e) {
       console.error("handleSendMessage:", e);
     }
@@ -335,32 +502,26 @@ export class Chats {
           console.error("Subida falló:", r.statusText);
           continue;
         }
-        const data = await r.json(); // contiene msg_id y relative_path
-
-        // Render local del adjunto
-        const fileUrl = `${browserUrl}${data.relative_path}`;
-        const localMsg = {
-          message_id: data.msg_id,
-          chat_id: this.chatId,
-          user_id: this.myUserId,
-          created_at: new Date()
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " "),
-          content: `<a href="${fileUrl}" target="_blank">${file.name}</a>`
-        };
-        await this.renderMessages([localMsg], false);
-        this.messages.push(localMsg);
-
-        // Placeholder para WebSocket
-        const wsMsg = {
-          message_id: data.msg_id,
-          chat_id: this.chatId,
-          user_id: this.myUserId,
-          created_at: localMsg.created_at,
-          content: "[archivo adjunto]"
-        };
-        this.ws?.sendMessage(wsMsg);
+        const data = await r.json();
+        const newMessage = data.message || {};
+        if (data.attachment) {
+          newMessage.attachment = data.attachment;
+        }
+        const outgoing = JSON.parse(JSON.stringify(newMessage));
+        if (newMessage.message_id && file) {
+          const previewUrl = URL.createObjectURL(file);
+          const cachedName = this.normalizeFileName(
+            data?.attachment?.original_name || file.name || "archivo"
+          );
+          this.attachmentCache.set(newMessage.message_id, {
+            objectUrl: previewUrl,
+            mimeType: file.type,
+            filename: cachedName,
+          });
+        }
+        await this.renderMessages([newMessage], false);
+        this.messages.push(newMessage);
+        this.ws?.sendMessage?.(outgoing);
       } catch (e) {
         console.error("handleFileSelected:", e);
       }

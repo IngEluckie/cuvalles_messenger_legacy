@@ -19,6 +19,32 @@ from protected.gestorArchivos import GestorArchivosChats
 
 router_chats = APIRouter(prefix="/chats")
 
+_ATTACHMENTS_SCHEMA_READY = False
+
+
+def ensure_attachments_schema(db: Database) -> None:
+    """
+    Garantiza que la tabla `attachments` tenga la columna `original_name`.
+    Ejecuta un ALTER TABLE la primera vez y no vuelve a repetirlo.
+    """
+    global _ATTACHMENTS_SCHEMA_READY
+    if _ATTACHMENTS_SCHEMA_READY:
+        return
+
+    info = db.fetch_query("PRAGMA table_info(attachments)")
+    if not info:
+        return
+
+    has_original = any(col.get("name") == "original_name" for col in info)
+    if not has_original:
+        db.execute_query("ALTER TABLE attachments ADD COLUMN original_name TEXT")
+        db.execute_query(
+            "UPDATE attachments SET original_name = file_name WHERE original_name IS NULL"
+        )
+
+    _ATTACHMENTS_SCHEMA_READY = True
+
+
 # MODELO para la creación de mensajes
 class MessageCreate(BaseModel):
     content: str
@@ -143,20 +169,48 @@ def fetch_chat_messages(db: Database, chat_id: int, limit: int = 20, offset: int
     """
     Devuelve mensajes + username del remitente.
     """
+    ensure_attachments_schema(db)
     query = """
         SELECT  m.message_id,
                 m.chat_id,
                 m.user_id,
                 u.username,                --  👈
                 m.content,
-                m.created_at
+                m.created_at,
+                a.id          AS attachment_id,
+                a.file_name   AS attachment_file_name,
+                a.original_name AS attachment_original_name,
+                a.mime_type   AS attachment_mime_type,
+                a.size_bytes  AS attachment_size
         FROM messages m
         JOIN Usuarios u ON u.Id_Usuarios = m.user_id
+        LEFT JOIN attachments a ON a.message_id = m.message_id
         WHERE m.chat_id = ?
         ORDER BY m.created_at DESC
         LIMIT ? OFFSET ?
     """
-    return db.fetch_query(query, (chat_id, limit, offset)) or []
+    rows = db.fetch_query(query, (chat_id, limit, offset)) or []
+    mensajes: list[dict] = []
+    for row in rows:
+        attachment = None
+        if row.get("attachment_id"):
+            attachment = {
+                "id": row["attachment_id"],
+                "download_url": f"/chats/attachments/{row['message_id']}",
+                "file_name": row["attachment_file_name"],
+                "original_name": row.get("attachment_original_name")
+                or row["attachment_file_name"],
+                "mime_type": row.get("attachment_mime_type"),
+                "size": row.get("attachment_size"),
+            }
+        row.pop("attachment_id", None)
+        row.pop("attachment_file_name", None)
+        row.pop("attachment_original_name", None)
+        row.pop("attachment_mime_type", None)
+        row.pop("attachment_size", None)
+        row["attachment"] = attachment
+        mensajes.append(row)
+    return mensajes
 
 @router_chats.get("/open_single_chat/{target_username}")
 async def open_single_chat(
@@ -369,6 +423,7 @@ async def send_file_to_chat(
     """
     db     = Database()
     gestor = GestorArchivosChats()   # Singleton
+    ensure_attachments_schema(db)
 
     # 1️⃣  Verificar chat existente
     if not db.fetch_query("SELECT 1 FROM chats WHERE chat_id = ? LIMIT 1", (chat_id,)):
@@ -422,11 +477,24 @@ async def send_file_to_chat(
     db.execute_query(
         """
         INSERT INTO attachments (
-            chat_id, message_id, sender_id,
-            file_name, mime_type, size_bytes
-        ) VALUES (?, ?, ?, ?, ?, ?)
+            chat_id,
+            message_id,
+            sender_id,
+            file_name,
+            mime_type,
+            size_bytes,
+            original_name
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (chat_id, msg_id, user.user_iD, new_name, mime_type, size_bytes)
+        (
+            chat_id,
+            msg_id,
+            user.user_iD,
+            new_name,
+            mime_type,
+            size_bytes,
+            file.filename,
+        ),
     )
 
     # 7️⃣  Recuperar el mensaje con JOIN a Usuarios para incluir `username`
@@ -446,13 +514,43 @@ async def send_file_to_chat(
         (msg_id,)
     )[0]
 
+    attachment_row = db.fetch_query(
+        """
+        SELECT id,
+               file_name,
+               original_name,
+               mime_type,
+               size_bytes
+        FROM attachments
+        WHERE message_id = ?
+        LIMIT 1
+        """,
+        (msg_id,),
+    )[0]
+
+    attachment_payload = {
+        "id": attachment_row["id"],
+        "download_url": f"/chats/attachments/{msg_id}",
+        "file_name": attachment_row["file_name"],
+        "original_name": attachment_row.get("original_name")
+        or attachment_row["file_name"],
+        "mime_type": attachment_row["mime_type"],
+        "size": attachment_row["size_bytes"],
+        "is_image": (attachment_row["mime_type"] or "").startswith("image/"),
+    }
+
+    mensaje["attachment"] = attachment_payload
+
     # 8️⃣  Respuesta
     return {
         "message": mensaje,                # burbuja lista (con username)
+        "attachment": attachment_payload,
+        "download_url": attachment_payload["download_url"],
         "file_name": new_name,
-        "relative_path": f"/media/chats/{chat_id}/{new_name}",
+        "relative_path": attachment_payload["download_url"],
         "mime_type": mime_type,
-        "size": size_bytes
+        "size": size_bytes,
+        "original_name": attachment_row.get("original_name") or file.filename,
     }
 
 def searchFileDB(msg_id: int) -> dict:
@@ -461,9 +559,14 @@ def searchFileDB(msg_id: int) -> dict:
     o lanza 404 si no existe.
     """
     db = Database()
+    ensure_attachments_schema(db)
     row = db.fetch_query(
         """
-        SELECT chat_id, file_name, mime_type
+        SELECT chat_id,
+               file_name,
+               mime_type,
+               original_name,
+               size_bytes
         FROM   attachments
         WHERE  message_id = ?
         LIMIT  1
@@ -495,6 +598,7 @@ async def download_attachment(
     chat_id    = meta["chat_id"]
     file_name  = meta["file_name"]
     mime_type  = meta["mime_type"]
+    download_name = meta.get("original_name") or file_name
 
     # 2️⃣  Verificar que el solicitante es miembro del chat
     member = db.fetch_query(
@@ -517,12 +621,14 @@ async def download_attachment(
         raise HTTPException(status_code=404, detail="Archivo no encontrado en disco.")
 
     # 4️⃣  Stream mediante FileResponse
-    return FileResponse(
+    response = FileResponse(
         path,
         media_type=mime_type,
-        filename=file_name,          # sugiere nombre al navegador
-        headers={"Cache-Control": "private, max-age=604800"}  # opcional
     )
+    response.headers["Cache-Control"] = "private, max-age=604800"
+    disposition = "inline" if (mime_type or "").startswith("image/") else "attachment"
+    response.headers["Content-Disposition"] = f'{disposition}; filename="{download_name}"'
+    return response
 
 """
 CREAR GRUPOS

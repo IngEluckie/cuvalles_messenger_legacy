@@ -246,6 +246,33 @@ html, body {
   margin: 2px 0;
 }
 
+.chat-attachment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-attachment-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-attachment-name {
+  font-size: 0.82rem;
+  color: #4d4d4d;
+}
+
+.chat-attachment-download {
+  color: #1a73e8;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.chat-attachment-download:hover {
+  text-decoration: underline;
+}
+
 .chat_image {
   width: 50px;
   height: 50px;
