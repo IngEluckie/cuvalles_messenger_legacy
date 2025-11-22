@@ -31,6 +31,18 @@ let user_local = {
 
 const appContainer = document.querySelector(".container");
 
+const calculateViewportHeight = () => {
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  document.documentElement.style.setProperty("--app-viewport", `${viewportHeight}px`);
+};
+
+calculateViewportHeight();
+window.addEventListener("resize", calculateViewportHeight);
+window.addEventListener("orientationchange", calculateViewportHeight);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", calculateViewportHeight);
+}
+
 const openMobileChatsPanel = () => {
   if (!appContainer) return;
   appContainer.classList.add("container--mobile-chats-open");

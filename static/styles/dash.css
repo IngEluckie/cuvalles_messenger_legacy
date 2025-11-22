@@ -29,6 +29,7 @@
   --button-danger-text: #ffffff;
   --button-danger-hover-bg: #8c001b;
   --input-focus-ring: rgba(59, 130, 246, 0.32);
+  --app-viewport: 100vh;
 }
 
 /* Variables para tema oscuro */
@@ -202,7 +203,7 @@ body.mobile-chats-open {
   padding: 16px;
   margin: 16px;
   margin-top: 8px;
-  height: 82vh;
+  height: calc(var(--app-viewport) - 120px);
   border-radius: 8px;
   display: flex;
   flex-direction: row;
@@ -393,7 +394,6 @@ body.mobile-chats-open {
 /* Área principal de chat */
 .main {
   border: var(--border-thickness) solid var(--border-color);
-  height: 80vh;
   flex: 1; /* ocupa el resto del espacio */
   border-radius: 8px;
   transition: flex 0.5s ease;
@@ -406,6 +406,7 @@ body.mobile-chats-open {
   margin-left: 16px; /* separación entre la barra lateral y el área principal */
   margin-right: 16px;
   min-width: 0;
+  min-height: 0;
 }
 
 .main .frase {
@@ -1357,8 +1358,9 @@ button:disabled {
   }
   .container {
     flex-direction: column;
-    height: auto;
     margin: 12px;
+    height: calc(var(--app-viewport) - 120px);
+    min-height: 0;
   }
   .container--mobile-chats-open::after {
     content: "";
@@ -1404,8 +1406,8 @@ button:disabled {
   .main {
     margin: 0;
     margin-top: 16px;
-    height: auto;
-    min-height: 50vh;
+    min-height: 0;
+    flex: 1;
   }
   .chat-header {
     border-radius: 8px;
@@ -1469,6 +1471,7 @@ button:disabled {
   }
   .container {
     padding: 12px;
+    height: calc(var(--app-viewport) - 96px);
   }
   .main .frase {
     font-size: 0.95rem;
