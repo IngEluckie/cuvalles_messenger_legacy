@@ -1329,32 +1329,52 @@ button:disabled {
 
 @media (max-width: 1024px) {
   .navbar {
-    align-items: flex-start;
-    gap: 16px;
+    padding: 10px 12px;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
   }
   .user {
-    width: 100%;
-    justify-content: space-between;
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-start;
+    gap: 8px;
   }
   .nav {
-    order: 2;
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    order: 0;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
   }
   .search-input {
-    width: 100%;
+    flex: 0 0 180px;
+    min-width: 0;
+    max-width: 200px;
+  }
+  .search-results {
+    width: clamp(160px, 40vw, 260px);
   }
   .btn-crear-grupo {
-    width: 100%;
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    width: auto;
+    font-size: 0.9rem;
   }
   .settings {
-    order: 3;
-    align-self: flex-end;
+    order: 0;
+    align-self: center;
   }
   .open-mobile-chats {
     display: inline-flex;
+  }
+  .theme-switch-container {
+    margin-bottom: 0;
+    gap: 6px;
+  }
+  .theme-switch-container > span {
+    display: none;
   }
   .container {
     flex-direction: column;
@@ -1436,6 +1456,9 @@ button:disabled {
 @media (max-width: 768px) {
   .navbar {
     margin: 8px 8px 0;
+    padding: 10px;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
   .userImage {
     width: 52px;
@@ -1480,6 +1503,20 @@ button:disabled {
     display: inline-flex;
     width: auto;
     align-self: flex-end;
+  }
+  .nav {
+    width: auto;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .search-input {
+    flex: 0 0 160px;
+    max-width: 180px;
+  }
+  .btn-crear-grupo {
+    flex: 0 0 auto;
+    padding: 8px 12px;
   }
   .main-mobile-chats-button {
     align-self: center;
