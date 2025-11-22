@@ -176,7 +176,16 @@ export class Chats {
           <div class="chat-header-info">
             <h3 class="chat-username">${headerTitle}</h3>
           </div>
+        </div>
+        <div class="chat-header-right">
           <button id="ver-status" class="ver-status">Ver status</button>
+          <button
+            type="button"
+            class="open-mobile-chats chat-header-mobile-button"
+            id="open-mobile-chats"
+          >
+            Chats recientes
+          </button>
         </div>
       </div>
       <div
@@ -196,6 +205,13 @@ export class Chats {
         <button id="sendMessageBtn" class="sendMessage">Enviar</button>
       </div>
     `;
+
+    if (typeof window.closeMobileChatsPanel === "function") {
+      window.closeMobileChatsPanel();
+    }
+    if (typeof window.attachMobileChatsButtons === "function") {
+      window.attachMobileChatsButtons(this.mainContainer);
+    }
 
     this.conversationElement = this.mainContainer.querySelector("#conversation");
     if (this.conversationElement) {

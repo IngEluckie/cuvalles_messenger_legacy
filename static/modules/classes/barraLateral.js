@@ -27,15 +27,40 @@ export class BarraLateral {
     this.unreadCounts = {};    // { chatId: count }
     this._intervals   = [];    // guarda setIntervals para limpiarlos
     this._groupAvatarUrls = new Map(); // { chatId: { objectUrl, source } }
+    this.scrollContainer = null;
+    this.mobileCloseButton = null;
+    this._onScrollListener = null;
 
     this.render();
     this.loadChats();
-    this.setupScrollListener();
   }
 
   /* ──────────────────── Render base ──────────────────── */
   render() {
-    this.container.innerHTML = "";
+    this.container.innerHTML = `
+      <div class="chats-mobile-header">
+        <span class="chats-mobile-title">Chats recientes</span>
+        <button
+          type="button"
+          class="chats-mobile-close"
+          aria-label="Cerrar lista de chats"
+        >
+          ×
+        </button>
+      </div>
+      <div class="chats-scroll" data-role="chats-scroll"></div>
+    `;
+
+    this.scrollContainer = this.container.querySelector("[data-role='chats-scroll']");
+    this.mobileCloseButton = this.container.querySelector(".chats-mobile-close");
+
+    if (this.mobileCloseButton) {
+      this.mobileCloseButton.addEventListener("click", () => {
+        window.closeMobileChatsPanel?.();
+      });
+    }
+
+    this.setupScrollListener();
   }
 
   /* ──────────────────── Cargar lista de chats ──────────────────── */
@@ -144,6 +169,11 @@ export class BarraLateral {
 
   /* ──────────────────── Render de cada chat ──────────────────── */
   renderChats(chats) {
+    if (!this.scrollContainer) {
+      this.render();
+    }
+    if (!this.scrollContainer) return;
+
     chats.forEach(chat => {
       const btn = document.createElement("button");
       btn.classList.add("chatbox");
@@ -179,9 +209,10 @@ export class BarraLateral {
 
         this.infoUsersBarra.hide();
         this.clearUnread(chat.chat_id);
+        window.closeMobileChatsPanel?.();
       });
 
-      this.container.appendChild(btn);
+      this.scrollContainer.appendChild(btn);
       this._paintUnread(chat.chat_id);
 
       /* ───── Solo para chats 1-a-1: avatar y estado online ───── */
@@ -212,14 +243,22 @@ export class BarraLateral {
 
   /* ──────────────────── Scroll infinito ──────────────────── */
   setupScrollListener() {
-    this.container.addEventListener("scroll", () => {
+    if (!this.scrollContainer) return;
+
+    if (this._onScrollListener) {
+      this.scrollContainer.removeEventListener("scroll", this._onScrollListener);
+    }
+
+    this._onScrollListener = () => {
       if (
-        this.container.scrollTop + this.container.clientHeight >=
-        this.container.scrollHeight - 10
+        this.scrollContainer.scrollTop + this.scrollContainer.clientHeight >=
+        this.scrollContainer.scrollHeight - 10
       ) {
         this.loadChats();
       }
-    });
+    };
+
+    this.scrollContainer.addEventListener("scroll", this._onScrollListener);
   }
 
   /* ──────────────────── Reload completo ──────────────────── */
@@ -239,8 +278,9 @@ export class BarraLateral {
 
   /* ───────────── Gestión de no-leídos ───────────── */
   moveChatToTop(chatId) {
-    const btn = this.container.querySelector(`[data-chat-id="${chatId}"]`);
-    if (btn) this.container.prepend(btn);
+    if (!this.scrollContainer) return;
+    const btn = this.scrollContainer.querySelector(`[data-chat-id="${chatId}"]`);
+    if (btn) this.scrollContainer.prepend(btn);
 
     const idx = this.chats.findIndex(c => c.chat_id === chatId);
     if (idx > -1) {

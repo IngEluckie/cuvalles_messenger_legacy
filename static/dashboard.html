@@ -9,11 +9,11 @@
 <body>
     <div class="navbar" id="navbar">
         <!-- Sección izquierda: usuario -->
-        <div class="user" id="userInfo" style="display: flex; flex-direction: row;">
+        <div class="user" id="userInfo">
             <img src="images/app/default_user.png" alt="userImage" class="userImage">
             <div class="userInfo">
                 <p class="username" id="username">Username</p>
-                <div class="theme-switch-container" style="margin-top: 4px;">
+                <div class="theme-switch-container">
                   <span>Activo</span>
                   <label class="switch">
                     <input type="checkbox" id="disposicionToggle">
@@ -29,7 +29,7 @@
         <div class="nav">
             <input type="text" class="search-input" placeholder="Buscar..." id="searchInput">
             <div id="searchResults" class="search-results" style="display: none;"></div>
-            <button class="btn-crear-grupo" style="border-radius: 25%, 25%;">Crear grupo</button>
+            <button class="btn-crear-grupo">Crear grupo</button>
         </div>
 
         <!-- Sección derecha: ajustes -->
@@ -43,8 +43,11 @@
             <!--Aquí se modifica desde una instancia BarraLateral-->
         </div>
         <div class="main">
-            <div class="frase" style="text-align: center;">¡No chat seleccionado! <br> Selecciona un usuario para comunicarte </div>
-            <img src="images/app/no_conversation.png" alt="" class="default_conversation" style="height: 60%; width: 40%;">
+            <div class="frase">¡No chat seleccionado! <br> Selecciona un usuario para comunicarte </div>
+            <img src="images/app/no_conversation.png" alt="" class="default_conversation">
+            <button type="button" class="open-mobile-chats main-mobile-chats-button">
+              Chats recientes
+            </button>
         </div>
         <div class="info">
           <button class="close-btn" id="close-btn">x</button>

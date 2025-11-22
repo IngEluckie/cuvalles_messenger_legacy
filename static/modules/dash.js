@@ -28,6 +28,52 @@ let user_local = {
     "username": "",
     "theme": "dark"
 }
+
+const appContainer = document.querySelector(".container");
+
+const openMobileChatsPanel = () => {
+  if (!appContainer) return;
+  appContainer.classList.add("container--mobile-chats-open");
+  document.body.classList.add("mobile-chats-open");
+};
+
+const closeMobileChatsPanel = () => {
+  if (!appContainer) return;
+  appContainer.classList.remove("container--mobile-chats-open");
+  document.body.classList.remove("mobile-chats-open");
+};
+
+const attachMobileChatsButtons = (scope = document) => {
+  scope.querySelectorAll(".open-mobile-chats").forEach(btn => {
+    if (btn.dataset.mobileChatsBound === "1") return;
+    btn.addEventListener("click", openMobileChatsPanel);
+    btn.dataset.mobileChatsBound = "1";
+  });
+};
+
+window.openMobileChatsPanel = openMobileChatsPanel;
+window.closeMobileChatsPanel = closeMobileChatsPanel;
+window.attachMobileChatsButtons = attachMobileChatsButtons;
+
+attachMobileChatsButtons();
+
+const mobileChatsQuery = window.matchMedia("(max-width: 768px)");
+const handleMobileChatsQuery = event => {
+  if (!event.matches) {
+    closeMobileChatsPanel();
+  }
+};
+if (typeof mobileChatsQuery.addEventListener === "function") {
+  mobileChatsQuery.addEventListener("change", handleMobileChatsQuery);
+} else if (typeof mobileChatsQuery.addListener === "function") {
+  mobileChatsQuery.addListener(handleMobileChatsQuery);
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeMobileChatsPanel();
+  }
+});
 // Al llamar al método, se ejecuta la petición y actualiza las propiedades de la instancia
 user.getUserInfo().then(data => {
     if (data) {
