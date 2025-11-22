@@ -178,6 +178,7 @@ export class BarraLateral {
       const btn = document.createElement("button");
       btn.classList.add("chatbox");
       btn.dataset.chatId = chat.chat_id;
+      btn.classList.add(chat.is_group ? "chatbox--group" : "chatbox--user");
 
       const imgSrc = chat.is_group
         ? "/images/app/grupo_default_image.png"
