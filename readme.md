@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ## Variables de entorno
 
-Define `MESSAGE_ENCRYPTION_KEY` en tu `.env` para que los mensajes se guarden cifrados.
+Define `MESSAGE_ENCRYPTION_KEY` en `.env` para que los mensajes se guarden cifrados.
 Debe ser una clave simétrica en Base64 (16, 24 o 32 bytes decodificados). Puedes
 generarla así:
 
